@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Card from '../components/common/Card';
 import Avatar from '../components/common/Avatar';
 import Button from '../components/common/Button';
@@ -47,6 +47,20 @@ function Blog() {
                 <p className="text-xl text-gray-600">
                     Stories, updates, and insights from our community
                 </p>
+                <div className="flex justify-center gap-4 md:gap-8 mt-8 flex-wrap">
+                    <Link to="/impact-story" className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-[#2CABE3] hover:text-white transition-all">
+                        Impact Story
+                    </Link>
+                    <span className="bg-[#2CABE3] text-white px-6 py-3 rounded-xl font-semibold shadow-md cursor-default">
+                        Blog
+                    </span>
+                    <Link to="/news" className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-[#2CABE3] hover:text-white transition-all">
+                        News
+                    </Link>
+                    <Link to="/testimonials" className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-[#2CABE3] hover:text-white transition-all">
+                        Testimonials
+                    </Link>
+                </div>
             </div>
 
             <div 

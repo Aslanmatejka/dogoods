@@ -144,20 +144,27 @@ function NewsPage() {
             {/* Hero Section */}
             <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <button
-                        onClick={() => navigate('/impact-story')}
-                        className="mb-6 text-gray-700 hover:text-blue-600 transition-colors flex items-center gap-2 font-semibold"
-                    >
-                        <span>?</span>
-                        <span>Back to Impact Story</span>
-                    </button>
                     <div className="text-center">
                         <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
                             DoGoods News &amp; Updates
                         </h1>
-                        <p className="text-xl text-gray-700 max-w-3xl mx-auto">
+                        <p className="text-xl text-gray-700 max-w-3xl mx-auto mb-8">
                             Stay informed about our latest milestones, partnerships, and community impact in the fight against food waste.
                         </p>
+                        <div className="flex justify-center gap-4 md:gap-8 flex-wrap">
+                            <Link to="/impact-story" className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-[#2CABE3] hover:text-white transition-all">
+                                Impact Story
+                            </Link>
+                            <Link to="/impact-story" onClick={(e) => { e.preventDefault(); navigate('/impact-story'); setTimeout(() => document.getElementById('blog-section')?.scrollIntoView({ behavior: 'smooth' }), 300); }} className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-[#2CABE3] hover:text-white transition-all">
+                                Blog
+                            </Link>
+                            <span className="bg-[#2CABE3] text-white px-6 py-3 rounded-xl font-semibold shadow-md cursor-default">
+                                News
+                            </span>
+                            <Link to="/testimonials" className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-[#2CABE3] hover:text-white transition-all">
+                                Testimonials
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </section>

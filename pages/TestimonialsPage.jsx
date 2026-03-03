@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import supabase from '../utils/supabaseClient';
 import { reportError } from '../utils/helpers';
 
@@ -113,19 +113,26 @@ function TestimonialsPage() {
             <div className="container mx-auto px-4 py-12">
                 {/* Header */}
                 <div className="max-w-4xl mx-auto mb-12 text-center fade-slide">
-                    <button
-                        onClick={() => navigate('/impact-story')}
-                        className="mb-6 inline-flex items-center text-primary-600 hover:text-primary-700 font-semibold transition-colors"
-                    >
-                        <span className="mr-2">&larr;</span>
-                        Back to Impact Story
-                    </button>
                     <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
                         Community Testimonials
                     </h1>
                     <p className="text-xl text-gray-600">
                         Real testimonials from real people making a difference in our communities
                     </p>
+                    <div className="flex justify-center gap-4 md:gap-8 mt-8 flex-wrap">
+                        <Link to="/impact-story" className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-[#2CABE3] hover:text-white transition-all">
+                            Impact Story
+                        </Link>
+                        <Link to="/impact-story" onClick={(e) => { e.preventDefault(); navigate('/impact-story'); setTimeout(() => document.getElementById('blog-section')?.scrollIntoView({ behavior: 'smooth' }), 300); }} className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-[#2CABE3] hover:text-white transition-all">
+                            Blog
+                        </Link>
+                        <Link to="/news" className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-[#2CABE3] hover:text-white transition-all">
+                            News
+                        </Link>
+                        <span className="bg-[#2CABE3] text-white px-6 py-3 rounded-xl font-semibold shadow-md cursor-default">
+                            Testimonials
+                        </span>
+                    </div>
                 </div>
 
                 {/* Swipeable Carousel */}
