@@ -1,17 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import React from "react";
 import Card from "../components/common/Card";
+import Button from "../components/common/Button";
 import ErrorBoundary from "../components/common/ErrorBoundary";
 import HeroSlideshow from "../components/common/HeroSlideshow";
-import { formatDate, reportError } from "../utils/helpers";
+import { reportError } from "../utils/helpers";
 import { DonateVolunteerButtons } from "./CommunityPage";
 import communitiesStatic from '../utils/communities';
-import { useImpact } from "../utils/hooks/useImpact";
 import supabase from "../utils/supabaseClient";
 
 function HomePage() {
     const navigate = useNavigate();
-    const { impact, loading: impactLoading } = useImpact();
     const [communities, setCommunities] = React.useState([]);
     const [loadingCommunities, setLoadingCommunities] = React.useState(true);
     const [selectedLocation, setSelectedLocation] = React.useState('all');
@@ -73,72 +72,6 @@ function HomePage() {
     }, [communities, selectedLocation]);
     
     try {
-        const foodCategories = [
-            {
-                id: 'produce',
-                title: 'Fruits & Vegetables',
-                description: 'Fresh produce and vegetables',
-                image: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60',
-                itemCount: 67
-            },
-            {
-                id: 'bakery',
-                title: 'Bakery',
-                description: 'Bread, pastries, and baked goods',
-                image: 'https://images.unsplash.com/photo-1608198093002-ad4e005484ec?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60',
-                itemCount: 23
-            },
-            {
-                id: 'dairy',
-                title: 'Dairy & Eggs',
-                description: 'Milk, cheese, eggs, and more',
-                image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60',
-                itemCount: 19
-            },
-            {
-                id: 'meat',
-                title: 'Meat & Poultry',
-                description: 'Fresh and frozen meats',
-                image: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60',
-                itemCount: 15
-            },
-            {
-                id: 'pantry',
-                title: 'Pantry Items',
-                description: 'Non-perishable food items',
-                image: 'https://github.com/Aslanmatejka/my-public-assets/blob/main/aaron-doucett-liOAS02GnfY-unsplash.jpg?raw=true',
-                itemCount: 34
-            },
-            {
-                id: 'canned',
-                title: 'Canned Goods',
-                description: 'Canned vegetables, fruits, and more',
-                image: 'https://github.com/Aslanmatejka/my-public-assets/blob/main/gabre-cameron--v04zNpvKoU-unsplash.jpg?raw=true',
-                itemCount: 28
-            },
-            {
-                id: 'frozen',
-                title: 'Frozen Foods',
-                description: 'Frozen meals and ingredients',
-                image: 'https://github.com/Aslanmatejka/my-public-assets/blob/main/istockphoto-1268433754-612x612.webp?raw=true',
-                itemCount: 21
-            },
-            {
-                id: 'prepared',
-                title: 'Prepared Foods',
-                description: 'Ready-to-eat meals',
-                image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60',
-                itemCount: 12
-            },
-        ];
-
-    // communities loaded from utils/communities.js
-
-        const handleNavigation = (path) => {
-            navigate(path);
-            window.scrollTo(0, 0);
-        };
-
         return (
             <ErrorBoundary>
                 <div data-name="home-page" role="main">

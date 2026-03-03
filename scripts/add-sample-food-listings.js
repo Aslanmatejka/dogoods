@@ -86,7 +86,7 @@ async function addSampleListings() {
     console.log('Adding sample food listings with coordinates...\n');
 
     for (const listing of sampleListings) {
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from('food_listings')
             .insert([listing])
             .select();
