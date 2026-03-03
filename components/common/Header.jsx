@@ -3,6 +3,7 @@ import Avatar from "./Avatar";
 import Button from "./Button";
 import { useAuth } from "../../utils/hooks/useSupabase";
 import { useNavigate } from 'react-router-dom';
+import { useTutorial } from '../../utils/TutorialContext';
 import PropTypes from 'prop-types';
 
 function Header({
@@ -24,6 +25,7 @@ function Header({
 }) {
     const { user: authUser, isAuthenticated, signOut } = useAuth();
     const navigate = useNavigate();
+    const { startTutorial } = useTutorial();
     
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
@@ -164,6 +166,15 @@ function Header({
                     </nav>
 
                     <div data-name="user-actions" className="hidden md:flex items-center space-x-4">
+                        {/* Help / Tutorial button */}
+                        <button
+                            onClick={() => startTutorial()}
+                            className="w-8 h-8 rounded-full border-2 border-[#2CABE3] text-[#2CABE3] hover:bg-[#2CABE3] hover:text-white flex items-center justify-center transition-all duration-200 text-sm font-bold"
+                            title="Take a guided tour"
+                            aria-label="Start tutorial"
+                        >
+                            ?
+                        </button>
                         {isAuthenticated ? (
                             <div 
                                 className="relative group"
@@ -377,6 +388,18 @@ function Header({
                                                     Settings
                                                 </a>
                                             </li>
+                                            <li>
+                                                <button
+                                                    onClick={() => {
+                                                        setIsMenuOpen(false);
+                                                        startTutorial();
+                                                    }}
+                                                    className="w-full block px-4 py-2 text-gray-700 hover:bg-[#2CABE3]/10 hover:text-[#2CABE3] rounded-lg text-left"
+                                                >
+                                                    <i className="fas fa-question-circle mr-2"></i>
+                                                    Take a Tour
+                                                </button>
+                                            </li>
                                             <li className="border-t border-gray-200 mt-2 pt-2">
                                                 <button
                                                     onClick={() => {
@@ -393,6 +416,18 @@ function Header({
                                     {!isAuthenticated && (
                                         <>
                                             <li className="border-t border-gray-200 mt-2 pt-2">
+                                                <button
+                                                    onClick={() => {
+                                                        setIsMenuOpen(false);
+                                                        startTutorial();
+                                                    }}
+                                                    className="w-full block px-4 py-2 text-gray-700 hover:bg-[#2CABE3]/10 hover:text-[#2CABE3] rounded-lg text-left"
+                                                >
+                                                    <i className="fas fa-question-circle mr-2"></i>
+                                                    Take a Tour
+                                                </button>
+                                            </li>
+                                            <li>
                                                 <a
                                                     href="/login"
                                                     className="block px-4 py-2 text-gray-700 hover:bg-[#2CABE3]/10 hover:text-[#2CABE3] rounded-lg"

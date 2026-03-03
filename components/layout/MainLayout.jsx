@@ -4,6 +4,8 @@ import Footer from "../common/Footer";
 // import AssistantButton from "../assistant/AssistantButton";
 // import AIAssistant from "../assistant/AIAssistant";
 import UserChatWidget from "../common/UserChatWidget";
+import Tutorial from "../common/Tutorial";
+import { useTutorial } from "../../utils/TutorialContext";
 
 
 function MainLayout({ children }) {
@@ -12,6 +14,18 @@ function MainLayout({ children }) {
     // const toggleAssistant = () => {
     //     setIsAssistantOpen(!isAssistantOpen);
     // };
+
+    const { hasSeenTutorial, isTutorialOpen, startTutorial } = useTutorial();
+
+    // Auto-start tutorial for first-time visitors (only on initial page load)
+    React.useEffect(() => {
+        if (!hasSeenTutorial && !isTutorialOpen) {
+            const timer = setTimeout(() => {
+                startTutorial();
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, []); // intentionally run only once on mount
 
     return (
         <div data-name="main-layout" className="min-h-screen flex flex-col bg-gradient-to-br from-cyan-50 via-white to-cyan-100">
@@ -35,6 +49,9 @@ function MainLayout({ children }) {
 
             {/* User Chat Widget (for messaging admin) */}
             <UserChatWidget />
+
+            {/* Global Tutorial Overlay */}
+            <Tutorial />
         </div>
     );
 }

@@ -8,8 +8,6 @@ import { DonateVolunteerButtons } from "./CommunityPage";
 import communitiesStatic from '../utils/communities';
 import { useImpact } from "../utils/hooks/useImpact";
 import supabase from "../utils/supabaseClient";
-import Tutorial from "../components/common/Tutorial";
-import { useTutorial } from "../utils/TutorialContext";
 
 function HomePage() {
     const navigate = useNavigate();
@@ -18,17 +16,6 @@ function HomePage() {
     const [loadingCommunities, setLoadingCommunities] = React.useState(true);
     const [selectedLocation, setSelectedLocation] = React.useState('all');
     const [showAllCommunities, setShowAllCommunities] = React.useState(false);
-    const { isTutorialOpen, closeTutorial, completeTutorial, startTutorial, hasSeenTutorial } = useTutorial();
-    
-    // Auto-start tutorial for new users on HomePage
-    React.useEffect(() => {
-        if (!hasSeenTutorial && !isTutorialOpen) {
-            const timer = setTimeout(() => {
-                startTutorial();
-            }, 1500); // Delay to let page load
-            return () => clearTimeout(timer);
-        }
-    }, [hasSeenTutorial, isTutorialOpen, startTutorial]);
     
     // Fetch communities with their metrics from database
     React.useEffect(() => {
@@ -475,13 +462,6 @@ function HomePage() {
 
 
                 </div>
-
-                {/* Tutorial - Only on HomePage */}
-                <Tutorial 
-                    isOpen={isTutorialOpen} 
-                    onClose={closeTutorial}
-                    onComplete={completeTutorial}
-                />
             </ErrorBoundary>
         );
     } catch (error) {
