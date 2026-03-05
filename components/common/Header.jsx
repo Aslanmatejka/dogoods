@@ -262,6 +262,7 @@ function Header({
                                 >
                                     Sign In
                                 </Button>
+                                <span data-tutorial="signup-btn">
                                 <Button
                                     variant="primary"
                                     size="sm"
@@ -269,6 +270,7 @@ function Header({
                                 >
                                     Sign Up
                                 </Button>
+                                </span>
                             </div>
                         )}
                     </div>

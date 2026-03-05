@@ -2,208 +2,90 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTutorial } from '../../utils/TutorialContext';
 
-// ─── Step Definitions ───────────────────────────────────────────────
-// category: null = included in full tour; otherwise only shown when that category is active
-const ALL_STEPS = [
-    // ── Welcome ──
+// ─── Step Definitions (8 steps) ─────────────────────────────────────
+const STEPS = [
+    // 1. Welcome
     {
         id: 'welcome',
-        category: null,
         target: null,
         icon: 'fa-seedling',
         title: 'Welcome to DoGoods!',
         content: 'DoGoods connects families with free food and resources in Alameda County. Let\'s walk through the platform together — it only takes a minute.',
         placement: 'center',
-        route: null
+        route: '/'
     },
-
-    // ── Navigation ──
+    // 2. Sign Up
     {
-        id: 'nav-find',
-        category: 'navigation',
+        id: 'signup',
+        target: '[data-tutorial="signup-btn"]',
+        icon: 'fa-user-plus',
+        title: 'Sign Up',
+        content: 'Create a free account or sign in to access your dashboard, claim food, and connect with your community. You\'ll need an approval number from your school in order to sign up.',
+        placement: 'bottom',
+        route: '/'
+    },
+    // 3. View Your Community
+    {
+        id: 'community',
+        target: '[data-tutorial="communities-section"]',
+        icon: 'fa-users',
+        title: 'View Your Community',
+        content: 'Select your community to see what All Good Living Foundation programs are offered in your school\'s community.',
+        placement: 'bottom',
+        route: '/'
+    },
+    // 4. Find Food
+    {
+        id: 'find-food',
         target: '[href="/find"]',
         icon: 'fa-search',
         title: 'Find Food',
-        content: 'Browse available food items shared by the community. Filter by category, distance, or dietary needs and claim what your family needs.',
+        content: 'Browse available food shared by your community, and select items to feed your family.',
         placement: 'bottom',
-        route: null
+        route: '/'
     },
+    // 5. Claim Food
     {
-        id: 'nav-support',
-        category: 'navigation',
-        target: null,
-        icon: 'fa-hand-holding-heart',
-        title: 'Support Us',
-        content: 'Under "Support Us" you can donate to help the foundation or volunteer your time. Every contribution helps feed families in our community.',
-        placement: 'center',
-        route: null
-    },
-    {
-        id: 'nav-impact',
-        category: 'navigation',
-        target: '[href="/impact-story"]',
-        icon: 'fa-chart-line',
-        title: 'Impact Story',
-        content: 'Read about the real-world impact of our community through blog posts, news updates, and testimonials from families we\'ve helped.',
-        placement: 'bottom',
-        route: null
-    },
-    {
-        id: 'nav-recipes',
-        category: 'navigation',
-        target: '[href="/recipes"]',
-        icon: 'fa-utensils',
-        title: 'Recipes',
-        content: 'Discover budget-friendly recipes that help you make the most of available food. Created by and for the community.',
-        placement: 'bottom',
-        route: null
-    },
-    {
-        id: 'nav-sponsors',
-        category: 'navigation',
-        target: '[href="/sponsors"]',
-        icon: 'fa-building',
-        title: 'Sponsors',
-        content: 'Meet the organizations and businesses that make DoGoods possible through their generous sponsorship.',
-        placement: 'bottom',
-        route: null
-    },
-    {
-        id: 'nav-contact',
-        category: 'navigation',
-        target: '[href="/contact"]',
-        icon: 'fa-envelope',
-        title: 'Contact',
-        content: 'Have questions or need help? Reach out to the All Good Living Foundation team through the contact page.',
-        placement: 'bottom',
-        route: null
-    },
-
-    // ── Account ──
-    {
-        id: 'account-actions',
-        category: 'account',
-        target: '[data-name="user-actions"]',
-        icon: 'fa-user-circle',
-        title: 'Your Account',
-        content: 'Click your avatar to access your Dashboard, Profile, Listings, and Settings. This is your personal hub.',
-        placement: 'bottom',
-        route: null,
-        requiresAuth: true
-    },
-    {
-        id: 'account-signin',
-        category: 'account',
-        target: null,
-        icon: 'fa-sign-in-alt',
-        title: 'Sign In / Sign Up',
-        content: 'Create a free account or sign in to access your dashboard, claim food, track your impact, and connect with the community.',
-        placement: 'center',
-        route: null,
-        requiresAuth: false,
-        hideIfAuth: true
-    },
-
-    // ── Finding Food ──
-    {
-        id: 'food-browse',
-        category: 'food',
-        target: null,
-        icon: 'fa-search',
-        title: 'Browse Available Food',
-        content: 'The Find Food page shows all currently available items. Each listing includes the food type, quantity, location, and expiration details.',
-        placement: 'center',
-        route: '/find'
-    },
-    {
-        id: 'food-claim',
-        category: 'food',
+        id: 'claim-food',
         target: null,
         icon: 'fa-hand-pointer',
-        title: 'Claiming Items',
+        title: 'Claim Food',
         content: 'When you find something you need, click "Claim" to reserve it. You\'ll receive pickup details and can track your claim in your dashboard.',
         placement: 'center',
-        route: null
+        route: null,
+        image: 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=400&h=200&fit=crop'
     },
-
-    // ── Community ──
+    // 6. Pick Up Your Food
     {
-        id: 'community-overview',
-        category: 'community',
+        id: 'pickup',
         target: null,
-        icon: 'fa-users',
-        title: 'Communities',
-        content: 'DoGoods serves multiple communities across Alameda County. Each community hub has its own food access programs, events, and resources.',
+        icon: 'fa-receipt',
+        title: 'Pick Up Your Food',
+        content: 'Your food is available in your school\'s community closet. Show the community manager at your school the receipt in your dashboard, and pick up the items you claimed.',
         placement: 'center',
         route: null
     },
+    // 7. Resources
     {
-        id: 'community-events',
-        category: 'community',
+        id: 'resources',
         target: null,
-        icon: 'fa-calendar-alt',
-        title: 'Community Hubs',
-        content: 'Visit your community page to find food access programs, connect with neighbors, and learn about local resources. Each community has its own hub.',
+        icon: 'fa-book-open',
+        title: 'Resources',
+        content: 'Check out our recipe page to get inspired, stay up to date on All Good Living Foundation\'s events and programs, and learn about our sponsors.',
         placement: 'center',
-        route: null
+        route: '/',
+        highlightMultiple: ['[href="/impact-story"]', '[href="/recipes"]', '[href="/sponsors"]']
     },
-
-    // ── Dashboard ──
-    {
-        id: 'dashboard-overview',
-        category: 'dashboard',
-        target: null,
-        icon: 'fa-tachometer-alt',
-        title: 'Your Dashboard',
-        content: 'Your dashboard shows your food claim receipts, recent activity, and quick actions like finding food or setting up donation schedules.',
-        placement: 'center',
-        route: '/dashboard',
-        requiresAuth: true
-    },
-
-    // ── How to help ──
-    {
-        id: 'help-donate',
-        category: 'helping',
-        target: null,
-        icon: 'fa-donate',
-        title: 'Donate',
-        content: 'Financial donations help purchase food, supplies, and run distribution events. Even small amounts make a big difference.',
-        placement: 'center',
-        route: '/donate'
-    },
-    {
-        id: 'help-volunteer',
-        category: 'helping',
-        target: null,
-        icon: 'fa-hands-helping',
-        title: 'Volunteer',
-        content: 'Volunteers are the backbone of DoGoods. Help at distribution events, sort donations, or assist with community outreach.',
-        placement: 'center',
-        route: null
-    },
-
-    // ── Completion ──
+    // 8. You're All Set
     {
         id: 'complete',
-        category: null,
         target: null,
         icon: 'fa-check-circle',
         title: 'You\'re All Set!',
-        content: 'You now know how to navigate DoGoods. Click the help button (?) in the header anytime to restart this tour or learn about specific sections.',
+        content: 'You now know how to navigate DoGoods. Click the help button (?) in the header anytime to restart this tour.',
         placement: 'center',
         route: null
     }
-];
-
-// ─── Category meta for the category picker ─────────────────────────
-const CATEGORIES = [
-    { id: null,          label: 'Full Tour',        icon: 'fa-route',              description: 'Complete walkthrough of the platform' },
-    { id: 'navigation',  label: 'Navigation',       icon: 'fa-compass',            description: 'Learn the main menu & pages' },
-    { id: 'food',        label: 'Finding Food',     icon: 'fa-apple-alt',          description: 'How to find & claim food' },
-    { id: 'community',   label: 'Community',        icon: 'fa-users',              description: 'Communities & events' },
-    { id: 'account',     label: 'Your Account',     icon: 'fa-user-circle',        description: 'Dashboard, profile & settings' },
-    { id: 'helping',     label: 'How to Help',      icon: 'fa-hands-helping',      description: 'Donating & volunteering' }
 ];
 
 // ─── Component ──────────────────────────────────────────────────────
@@ -211,42 +93,58 @@ function Tutorial() {
     const {
         isTutorialOpen,
         currentStepIndex,
-        activeCategory,
         closeTutorial,
         completeTutorial,
         nextStep,
         prevStep,
         goToStep,
-        startTutorial
     } = useTutorial();
 
     const navigate = useNavigate();
     const location = useLocation();
     const [highlightRect, setHighlightRect] = useState(null);
-    const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+    const [multiHighlightRects, setMultiHighlightRects] = useState([]);
     const tooltipRef = useRef(null);
     const resizeTimerRef = useRef(null);
 
-    // Filter steps based on active category
-    const steps = React.useMemo(() => {
-        if (activeCategory === null) {
-            // Full tour: include steps that have no category OR steps from all categories
-            return ALL_STEPS;
-        }
-        // Category tour: welcome + category steps + complete
-        const welcome = ALL_STEPS.find(s => s.id === 'welcome');
-        const complete = ALL_STEPS.find(s => s.id === 'complete');
-        const categorySteps = ALL_STEPS.filter(s => s.category === activeCategory);
-        return [welcome, ...categorySteps, complete];
-    }, [activeCategory]);
-
+    const steps = STEPS;
     const currentStep = steps[currentStepIndex] || steps[0];
     const isFirstStep = currentStepIndex === 0;
     const isLastStep = currentStepIndex === steps.length - 1;
 
-    // Highlight target element
+    // Highlight target element(s)
     const updateHighlight = useCallback(() => {
-        if (!isTutorialOpen || !currentStep?.target) {
+        if (!isTutorialOpen) {
+            setHighlightRect(null);
+            setMultiHighlightRects([]);
+            return;
+        }
+
+        // Multi-highlight for Resources step
+        if (currentStep?.highlightMultiple) {
+            const rects = currentStep.highlightMultiple
+                .map(sel => document.querySelector(sel))
+                .filter(Boolean)
+                .map(el => {
+                    const rect = el.getBoundingClientRect();
+                    return {
+                        top: rect.top - 6,
+                        left: rect.left - 6,
+                        width: rect.width + 12,
+                        height: rect.height + 12
+                    };
+                });
+            setMultiHighlightRects(rects);
+            setHighlightRect(null);
+            if (rects.length > 0) {
+                document.querySelector(currentStep.highlightMultiple[0])?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            return;
+        }
+
+        setMultiHighlightRects([]);
+
+        if (!currentStep?.target) {
             setHighlightRect(null);
             return;
         }
@@ -307,11 +205,6 @@ function Tutorial() {
         closeTutorial();
     };
 
-    const handleSelectCategory = (catId) => {
-        setShowCategoryPicker(false);
-        startTutorial(catId);
-    };
-
     // Tooltip positioning
     const getTooltipStyle = () => {
         if (!highlightRect || currentStep?.placement === 'center') {
@@ -355,51 +248,49 @@ function Tutorial() {
         return style;
     };
 
-    // ─── Category picker screen ─────────────────────────────────────
-    if (showCategoryPicker) {
-        return (
-            <>
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999]" onClick={() => setShowCategoryPicker(false)} />
-                <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-fadeIn">
-                        <div className="flex items-center justify-between mb-5">
-                            <h3 className="text-xl font-bold text-gray-900">Choose a Guide</h3>
-                            <button onClick={() => setShowCategoryPicker(false)} className="text-gray-400 hover:text-gray-600 text-lg">
-                                <i className="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <p className="text-gray-500 text-sm mb-5">Pick a section to learn about, or take the full tour.</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {CATEGORIES.map(cat => (
-                                <button
-                                    key={cat.id || 'full'}
-                                    onClick={() => handleSelectCategory(cat.id)}
-                                    className="flex items-start gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#2CABE3] hover:bg-[#2CABE3]/5 transition-all text-left group"
-                                >
-                                    <div className="w-10 h-10 rounded-lg bg-[#2CABE3]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#2CABE3]/20 transition-colors">
-                                        <i className={`fas ${cat.icon} text-[#2CABE3]`}></i>
-                                    </div>
-                                    <div>
-                                        <div className="font-semibold text-gray-900 text-sm">{cat.label}</div>
-                                        <div className="text-xs text-gray-500 mt-0.5">{cat.description}</div>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-                <style>{tutorialStyles}</style>
-            </>
-        );
-    }
-
     // ─── Main tutorial UI ───────────────────────────────────────────
+    // Build an SVG overlay with cutout holes so highlighted elements are fully visible
+    const hasAnyCutout = highlightRect || multiHighlightRects.length > 0;
+
     return (
         <>
-            {/* Overlay */}
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] transition-opacity" onClick={handleSkip} />
+            {/* Dark overlay — uses SVG mask to cut transparent holes for spotlighted elements */}
+            {hasAnyCutout ? (
+                <svg className="fixed inset-0 w-full h-full z-[9999]" onClick={handleSkip} style={{ pointerEvents: 'auto' }}>
+                    <defs>
+                        <mask id="tutorial-mask">
+                            {/* White = visible (dark overlay shows), black = hidden (cutout) */}
+                            <rect x="0" y="0" width="100%" height="100%" fill="white" />
+                            {highlightRect && (
+                                <rect
+                                    x={highlightRect.left}
+                                    y={highlightRect.top}
+                                    width={highlightRect.width}
+                                    height={highlightRect.height}
+                                    rx="12"
+                                    fill="black"
+                                />
+                            )}
+                            {multiHighlightRects.map((rect, i) => (
+                                <rect
+                                    key={i}
+                                    x={rect.left}
+                                    y={rect.top}
+                                    width={rect.width}
+                                    height={rect.height}
+                                    rx="12"
+                                    fill="black"
+                                />
+                            ))}
+                        </mask>
+                    </defs>
+                    <rect x="0" y="0" width="100%" height="100%" fill="rgba(0,0,0,0.6)" mask="url(#tutorial-mask)" />
+                </svg>
+            ) : (
+                <div className="fixed inset-0 bg-black/60 z-[9999] transition-opacity" onClick={handleSkip} />
+            )}
 
-            {/* Spotlight */}
+            {/* Spotlight border ring (single) */}
             {highlightRect && (
                 <div
                     className="fixed pointer-events-none z-[10000] tutorial-spotlight"
@@ -410,10 +301,27 @@ function Tutorial() {
                         height: `${highlightRect.height}px`,
                         border: '3px solid #2CABE3',
                         borderRadius: '12px',
-                        boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 30px rgba(44, 171, 227, 0.4)',
+                        boxShadow: '0 0 30px rgba(44, 171, 227, 0.4)',
                     }}
                 />
             )}
+
+            {/* Spotlight border rings (multiple — Resources step) */}
+            {multiHighlightRects.map((rect, i) => (
+                <div
+                    key={i}
+                    className="fixed pointer-events-none z-[10000] tutorial-spotlight"
+                    style={{
+                        top: `${rect.top}px`,
+                        left: `${rect.left}px`,
+                        width: `${rect.width}px`,
+                        height: `${rect.height}px`,
+                        border: '3px solid #2CABE3',
+                        borderRadius: '12px',
+                        boxShadow: '0 0 20px rgba(44, 171, 227, 0.4)',
+                    }}
+                />
+            ))}
 
             {/* Tooltip card */}
             <div
@@ -439,6 +347,13 @@ function Tutorial() {
                 </div>
 
                 <div className="p-6">
+                    {/* Optional image (Claim Food step) */}
+                    {currentStep.image && (
+                        <div className="mb-4 rounded-xl overflow-hidden border border-gray-100">
+                            <img src={currentStep.image} alt={currentStep.title} className="w-full h-40 object-cover" />
+                        </div>
+                    )}
+
                     <p className="text-gray-600 leading-relaxed mb-5">{currentStep.content}</p>
 
                     {/* Step dots */}
@@ -462,30 +377,16 @@ function Tutorial() {
                     {/* Progress text */}
                     <div className="text-xs text-gray-400 text-center mb-4">
                         Step {currentStepIndex + 1} of {steps.length}
-                        {activeCategory && (
-                            <span className="ml-2 text-[#2CABE3]">
-                                &middot; {CATEGORIES.find(c => c.id === activeCategory)?.label || 'Full Tour'}
-                            </span>
-                        )}
                     </div>
 
                     {/* Actions */}
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleSkip}
-                                className="text-gray-400 hover:text-gray-600 text-sm font-medium transition-colors"
-                            >
-                                Skip
-                            </button>
-                            <button
-                                onClick={() => setShowCategoryPicker(true)}
-                                className="text-[#2CABE3] hover:text-[#1b8dbf] text-sm font-medium transition-colors flex items-center gap-1"
-                            >
-                                <i className="fas fa-th-large text-xs"></i>
-                                Sections
-                            </button>
-                        </div>
+                        <button
+                            onClick={handleSkip}
+                            className="text-gray-400 hover:text-gray-600 text-sm font-medium transition-colors"
+                        >
+                            Skip
+                        </button>
                         <div className="flex gap-2">
                             {!isFirstStep && (
                                 <button

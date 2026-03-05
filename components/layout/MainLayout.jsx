@@ -7,6 +7,9 @@ import UserChatWidget from "../common/UserChatWidget";
 import Tutorial from "../common/Tutorial";
 import { useTutorial } from "../../utils/TutorialContext";
 
+// Module-level flag — survives re-mounts but resets on full page reload
+let tutorialAutoStartChecked = false;
+
 
 function MainLayout({ children }) {
     // const [isAssistantOpen, setIsAssistantOpen] = React.useState(false);
@@ -15,17 +18,22 @@ function MainLayout({ children }) {
     //     setIsAssistantOpen(!isAssistantOpen);
     // };
 
-    const { hasSeenTutorial, isTutorialOpen, startTutorial } = useTutorial();
+    const { isTutorialOpen, startTutorial } = useTutorial();
 
-    // Auto-start tutorial for first-time visitors (only on initial page load)
+    // Auto-start tutorial ONLY for first-time visitors.
+    // Fires once per full page load; localStorage check prevents repeat visits.
     React.useEffect(() => {
-        if (!hasSeenTutorial && !isTutorialOpen) {
+        if (tutorialAutoStartChecked) return;
+        tutorialAutoStartChecked = true;
+
+        const alreadyCompleted = localStorage.getItem('dogoods_tutorial_completed') === 'true';
+        if (!alreadyCompleted) {
             const timer = setTimeout(() => {
                 startTutorial();
             }, 1500);
             return () => clearTimeout(timer);
         }
-    }, []); // intentionally run only once on mount
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <div data-name="main-layout" className="min-h-screen flex flex-col bg-gradient-to-br from-cyan-50 via-white to-cyan-100">

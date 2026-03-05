@@ -18,7 +18,6 @@ export const TutorialProvider = ({ children }) => {
     const [isTutorialOpen, setIsTutorialOpen] = useState(false);
     const [hasSeenTutorial, setHasSeenTutorial] = useState(false);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
-    const [activeCategory, setActiveCategory] = useState(null); // null = full tour, or 'navigation', 'food', etc.
 
     useEffect(() => {
         const tutorialCompleted = localStorage.getItem(STORAGE_KEY);
@@ -27,8 +26,7 @@ export const TutorialProvider = ({ children }) => {
         }
     }, []);
 
-    const startTutorial = useCallback((category = null) => {
-        setActiveCategory(category);
+    const startTutorial = useCallback(() => {
         setCurrentStepIndex(0);
         setIsTutorialOpen(true);
     }, []);
@@ -38,7 +36,6 @@ export const TutorialProvider = ({ children }) => {
         localStorage.setItem(STORAGE_KEY, 'true');
         setIsTutorialOpen(false);
         setCurrentStepIndex(0);
-        setActiveCategory(null);
     }, []);
 
     const completeTutorial = useCallback(() => {
@@ -46,7 +43,6 @@ export const TutorialProvider = ({ children }) => {
         localStorage.setItem(STORAGE_KEY, 'true');
         setIsTutorialOpen(false);
         setCurrentStepIndex(0);
-        setActiveCategory(null);
     }, []);
 
     const resetTutorial = useCallback(() => {
@@ -54,7 +50,6 @@ export const TutorialProvider = ({ children }) => {
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(PROGRESS_KEY);
         setCurrentStepIndex(0);
-        setActiveCategory(null);
         setIsTutorialOpen(true);
     }, []);
 
@@ -74,7 +69,6 @@ export const TutorialProvider = ({ children }) => {
         isTutorialOpen,
         hasSeenTutorial,
         currentStepIndex,
-        activeCategory,
         startTutorial,
         closeTutorial,
         completeTutorial,
@@ -82,7 +76,6 @@ export const TutorialProvider = ({ children }) => {
         goToStep,
         nextStep,
         prevStep,
-        setActiveCategory
     };
 
     return (
