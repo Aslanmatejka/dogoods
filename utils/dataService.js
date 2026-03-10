@@ -484,8 +484,14 @@ class DataService {
       const buildQuery = (selectStr) => {
         let q = supabase
           .from('food_listings')
-          .select(selectStr)
-          .eq('status', filters.status || 'pending');
+          .select(selectStr);
+
+        // Apply status filter: skip when viewing own listings (user_id filter present)
+        if (filters.status) {
+          q = q.eq('status', filters.status);
+        } else if (!filters.user_id) {
+          q = q.eq('status', 'pending');
+        }
 
         if (filters.category) q = q.eq('category', filters.category);
         if (filters.listing_type) q = q.eq('listing_type', filters.listing_type);
@@ -524,20 +530,75 @@ class DataService {
 
   async createFoodListing(listingData) {
     try {
-      // Get current user
-      const userResult = await supabase.auth.getUser();
-      const user = userResult.data.user;
-      if (!user) throw new Error('User must be authenticated to create a food listing');
+      // Get user_id from data (already set by calling component) or from localStorage
+      let userId = listingData.user_id;
+      if (!userId) {
+        try {
+          const sessionData = JSON.parse(localStorage.getItem('sb-ifzbpqyuhnxbhdcnmvfs-auth-token') || '{}');
+          userId = sessionData?.user?.id;
+        } catch (e) {
+          console.warn('[createFoodListing] Failed to read user from localStorage');
+        }
+        if (!userId) throw new Error('User must be authenticated to create a food listing');
+      }
 
-      // Prepare listing data with user_id
-      // Keep location-related fields in the main listing object
+      // Handle image upload if File object is provided
+      let imageUrl = listingData.image_url || null;
+      if (listingData.image instanceof File) {
+        try {
+          const uploadResult = await this.uploadFile(listingData.image, 'food-images');
+          if (uploadResult?.url) {
+            imageUrl = uploadResult.url;
+          }
+        } catch (uploadErr) {
+          console.error('[createFoodListing] Image upload failed:', uploadErr);
+          throw new Error('Failed to upload image. Please try again.');
+        }
+      }
+
+      // Map school_district to community_id if provided
+      let communityId = listingData.community_id || null;
+      if (listingData.school_district && !communityId) {
+        try {
+          const { data: commData } = await supabase
+            .from('communities')
+            .select('id, name')
+            .eq('name', listingData.school_district)
+            .limit(1);
+          if (commData && commData.length > 0) {
+            communityId = commData[0].id;
+          }
+        } catch (e) {
+          console.warn('[createFoodListing] Failed to look up community:', e);
+        }
+      }
+
+      // Build clean listing object with only valid food_listings columns
       const listing = {
-        ...listingData,
-        user_id: user.id,
-        // Keep these fields for display purposes
-        donor_city: listingData.donor_city,
-        donor_state: listingData.donor_state,
-        donor_zip: listingData.donor_zip,
+        title: listingData.title,
+        description: listingData.description,
+        quantity: listingData.quantity,
+        unit: listingData.unit,
+        category: listingData.category,
+        expiry_date: listingData.expiry_date || null,
+        pickup_by: listingData.pickup_by || null,
+        status: listingData.status || 'pending',
+        user_id: userId,
+        image_url: imageUrl,
+        donor_name: listingData.donor_name || null,
+        donor_email: listingData.donor_email || null,
+        donor_phone: listingData.donor_phone || null,
+        donor_city: listingData.donor_city || null,
+        donor_state: listingData.donor_state || null,
+        donor_zip: listingData.donor_zip || null,
+        donor_occupation: listingData.donor_occupation || null,
+        donor_type: listingData.donor_type || null,
+        community_id: communityId,
+        latitude: listingData.latitude || null,
+        longitude: listingData.longitude || null,
+        dietary_tags: listingData.dietary_tags || [],
+        allergens: listingData.allergens || [],
+        ingredients: listingData.ingredients || null,
         location: listingData.donor_city && listingData.donor_state ? {
           address: `${listingData.donor_city}, ${listingData.donor_state} ${listingData.donor_zip || ''}`.trim(),
           latitude: listingData.latitude,
@@ -545,30 +606,40 @@ class DataService {
         } : null
       };
 
-      // Map school_district (user-facing select) to internal community_id when possible
-      if (listingData.school_district) {
-        const match = communities.find(c => c.name === listingData.school_district || String(c.id) === String(listingData.school_district));
-        if (match) {
-          listing.community_id = match.id;
-        }
+      // Use direct REST API to avoid Supabase JS client auth issues
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      let accessToken = supabaseKey;
+      try {
+        const sessionData = JSON.parse(localStorage.getItem('sb-ifzbpqyuhnxbhdcnmvfs-auth-token') || '{}');
+        if (sessionData?.access_token) accessToken = sessionData.access_token;
+      } catch (e) { /* use anon key */ }
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+
+      const response = await fetch(`${supabaseUrl}/rest/v1/food_listings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${accessToken}`,
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(listing),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Create food listing failed: ${response.status} - ${errText}`);
       }
 
-      const result = await supabase
-        .from('food_listings')
-        .insert(listing)
-        .select(`
-          *,
-          users!food_listings_user_id_fkey (
-            id,
-            name,
-            avatar_url,
-            organization
-          )
-        `)
-        .single()
-
-      if (result.error) throw result.error
-      return result.data
+      const result = await response.json();
+      return Array.isArray(result) ? result[0] : result;
     } catch (error) {
       console.error('Create food listing error:', error)
       reportError(error)
@@ -579,14 +650,42 @@ class DataService {
   async updateFoodListing(id, updates) {
     try {
       const toUpdate = { ...updates };
+
+      // Handle image upload if File object provided
+      if (toUpdate.image instanceof File) {
+        try {
+          const uploadResult = await this.uploadFile(toUpdate.image, 'food-images');
+          if (uploadResult?.url) {
+            toUpdate.image_url = uploadResult.url;
+          }
+        } catch (uploadErr) {
+          console.error('[updateFoodListing] Image upload failed:', uploadErr);
+          throw new Error('Failed to upload image. Please try again.');
+        }
+      }
+
       // Map school_district to community_id on update
       if (toUpdate.school_district) {
-        const match = communities.find(c => c.name === toUpdate.school_district || String(c.id) === String(toUpdate.school_district));
-        if (match) {
-          toUpdate.community_id = match.id;
+        try {
+          const { data: commData } = await supabase
+            .from('communities')
+            .select('id, name')
+            .eq('name', toUpdate.school_district)
+            .limit(1);
+          if (commData && commData.length > 0) {
+            toUpdate.community_id = commData[0].id;
+          }
+        } catch (e) {
+          console.warn('[updateFoodListing] Failed to look up community:', e);
         }
-        delete toUpdate.school_district;
       }
+
+      // Remove non-column fields that shouldn't be sent to DB
+      delete toUpdate.image;
+      delete toUpdate.school_district;
+      delete toUpdate.full_address;
+      delete toUpdate.donor;
+      delete toUpdate.users;
 
       const { data, error } = await supabase
         .from('food_listings')
@@ -1430,9 +1529,16 @@ class DataService {
       // Use the file name at the root of the bucket (avoid duplicate bucket segments)
       const filePath = `${fileName}`
 
-      // Ensure user is authenticated; storage may enforce RLS
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User must be authenticated to upload files')
+      // Verify user is authenticated via localStorage (avoids getUser() which can hang)
+      try {
+        const sessionData = JSON.parse(localStorage.getItem('sb-ifzbpqyuhnxbhdcnmvfs-auth-token') || '{}');
+        if (!sessionData?.access_token) {
+          throw new Error('User must be authenticated to upload files');
+        }
+      } catch (e) {
+        if (e.message && e.message.includes('authenticated')) throw e;
+        throw new Error('User must be authenticated to upload files');
+      }
 
       const uploadRes = await supabase.storage
         .from(bucket)

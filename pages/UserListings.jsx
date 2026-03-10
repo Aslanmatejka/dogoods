@@ -31,7 +31,6 @@ function UserListings() {
             const listingData = {
                 ...formData,
                 user_id: authUser.id,
-                status: 'active'
             };
 
             if (isEditing && initialData) {
