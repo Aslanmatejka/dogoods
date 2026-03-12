@@ -75,6 +75,10 @@ function AdminShareFood() {
         community_id: null,
         title: null,
         quantity: null,
+        pickup_by: null,
+        expiry_date: null,
+        full_address: null,
+        donor_name: null,
         notes: null,
     });
 
@@ -173,6 +177,10 @@ function AdminShareFood() {
             const communityId = newRowRefs.current.community_id?.value;
             const title = newRowRefs.current.title?.value?.trim();
             const quantity = parseFloat(newRowRefs.current.quantity?.value) || 0;
+            const pickupBy = newRowRefs.current.pickup_by?.value || null;
+            const expiryDate = newRowRefs.current.expiry_date?.value || null;
+            const fullAddress = newRowRefs.current.full_address?.value?.trim() || '';
+            const donorName = newRowRefs.current.donor_name?.value?.trim() || 'DoGoods Admin';
             const notes = newRowRefs.current.notes?.value?.trim() || '';
 
             if (!title) { alert('⚠️ Food name is required.'); return; }
@@ -186,7 +194,10 @@ function AdminShareFood() {
                 quantity,
                 unit: 'lb',
                 community_id: communityId,
-                donor_name: 'DoGoods Admin',
+                pickup_by: pickupBy ? new Date(pickupBy + 'T17:00:00').toISOString() : null,
+                expiry_date: expiryDate || null,
+                full_address: fullAddress || null,
+                donor_name: donorName,
                 donor_type: 'organization',
                 listing_type: 'donation',
                 status: 'active',
@@ -204,6 +215,10 @@ function AdminShareFood() {
             if (newRowRefs.current.community_id) newRowRefs.current.community_id.value = '';
             if (newRowRefs.current.title) newRowRefs.current.title.value = '';
             if (newRowRefs.current.quantity) newRowRefs.current.quantity.value = '';
+            if (newRowRefs.current.pickup_by) newRowRefs.current.pickup_by.value = '';
+            if (newRowRefs.current.expiry_date) newRowRefs.current.expiry_date.value = '';
+            if (newRowRefs.current.full_address) newRowRefs.current.full_address.value = '';
+            if (newRowRefs.current.donor_name) newRowRefs.current.donor_name.value = '';
             if (newRowRefs.current.notes) newRowRefs.current.notes.value = '';
 
             await fetchData(true);
@@ -255,12 +270,16 @@ function AdminShareFood() {
 
     // Export CSV
     const exportToCSV = () => {
-        const headers = ['Date', 'Community', 'Food Name', 'Quantity (lb)', 'Notes'];
+        const headers = ['Date', 'Community', 'Food Name', 'Quantity (lb)', 'Pickup By', 'Expiry Date', 'Pickup Address', 'Donor', 'Notes'];
         const rows = filteredData.map(row => [
             row.created_at ? new Date(row.created_at).toLocaleDateString() : '',
             communityName(row.community_id),
             row.title || '',
             row.quantity || 0,
+            row.pickup_by ? new Date(row.pickup_by).toLocaleDateString() : '',
+            row.expiry_date || '',
+            row.full_address || '',
+            row.donor_name || '',
             (row.description || '').replace(/"/g, '""')
         ]);
 
@@ -375,6 +394,18 @@ function AdminShareFood() {
                                     <th className="px-3 py-3 text-left text-xs font-medium text-[#2CABE3] uppercase tracking-wider min-w-[110px]">
                                         Quantity (lb)
                                     </th>
+                                    <th className="px-3 py-3 text-left text-xs font-medium text-orange-600 uppercase tracking-wider min-w-[160px]">
+                                        Pickup By
+                                    </th>
+                                    <th className="px-3 py-3 text-left text-xs font-medium text-orange-600 uppercase tracking-wider min-w-[160px]">
+                                        Expiry Date
+                                    </th>
+                                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[250px]">
+                                        Pickup Address
+                                    </th>
+                                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[180px]">
+                                        Donor
+                                    </th>
                                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[300px]">
                                         Notes
                                     </th>
@@ -419,6 +450,36 @@ function AdminShareFood() {
                                             inputRef={el => newRowRefs.current.quantity = el}
                                             onBlur={() => {}}
                                             className="w-full min-w-[80px] px-2 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2CABE3] focus:border-transparent"
+                                        />
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        <UncontrolledCell
+                                            type="date"
+                                            defaultValue=""
+                                            inputRef={el => newRowRefs.current.pickup_by = el}
+                                            onBlur={() => {}}
+                                        />
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        <UncontrolledCell
+                                            type="date"
+                                            defaultValue=""
+                                            inputRef={el => newRowRefs.current.expiry_date = el}
+                                            onBlur={() => {}}
+                                        />
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        <UncontrolledCell
+                                            defaultValue=""
+                                            inputRef={el => newRowRefs.current.full_address = el}
+                                            onBlur={() => {}}
+                                        />
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        <UncontrolledCell
+                                            defaultValue=""
+                                            inputRef={el => newRowRefs.current.donor_name = el}
+                                            onBlur={() => {}}
                                         />
                                     </td>
                                     <td className="px-3 py-2">
@@ -477,6 +538,32 @@ function AdminShareFood() {
                                         </td>
                                         <td className="px-3 py-2">
                                             <UncontrolledCell
+                                                type="date"
+                                                defaultValue={row.pickup_by ? row.pickup_by.split('T')[0] : ''}
+                                                onBlur={(val) => handleUpdateRow(row.id, 'pickup_by', val ? new Date(val + 'T17:00:00').toISOString() : null)}
+                                            />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <UncontrolledCell
+                                                type="date"
+                                                defaultValue={row.expiry_date || ''}
+                                                onBlur={(val) => handleUpdateRow(row.id, 'expiry_date', val || null)}
+                                            />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <UncontrolledCell
+                                                defaultValue={row.full_address || ''}
+                                                onBlur={(val) => handleUpdateRow(row.id, 'full_address', val)}
+                                            />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <UncontrolledCell
+                                                defaultValue={row.donor_name || ''}
+                                                onBlur={(val) => handleUpdateRow(row.id, 'donor_name', val)}
+                                            />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <UncontrolledCell
                                                 defaultValue={row.description || ''}
                                                 onBlur={(val) => handleUpdateRow(row.id, 'description', val)}
                                             />
@@ -495,7 +582,7 @@ function AdminShareFood() {
 
                                 {filteredData.length === 0 && (
                                     <tr>
-                                        <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan="10" className="px-6 py-8 text-center text-gray-500">
                                             No food listings yet. Add your first entry using the row above.
                                         </td>
                                     </tr>
@@ -515,6 +602,10 @@ function AdminShareFood() {
                         <li>• <strong>Bulk Food Entry:</strong> Quickly add food donations to any community</li>
                         <li>• Fill in the colored row at the top to add a new entry, then click the + button</li>
                         <li>• All entries use a generic food image and are set to Active status automatically</li>
+                        <li>• <strong>Pickup By:</strong> Set the deadline for when food must be picked up</li>
+                        <li>• <strong>Expiry Date:</strong> Set when the food expires</li>
+                        <li>• <strong>Pickup Address:</strong> Where the food can be collected from</li>
+                        <li>• <strong>Donor:</strong> Name of the person or organization donating (defaults to DoGoods Admin)</li>
                         <li>• Click on any cell to edit existing data — changes save automatically</li>
                         <li>• Use the trash icon to delete entries</li>
                         <li>• Export to CSV for backup or analysis</li>
