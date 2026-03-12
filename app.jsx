@@ -47,6 +47,7 @@ import UserFeedback from './pages/admin/UserFeedback.jsx';
 import VerificationManagement from './pages/admin/VerificationManagement.jsx';
 import ApprovalCodeManagement from './pages/admin/ApprovalCodeManagement.jsx';
 import CommunityManagement from './pages/admin/CommunityManagement.jsx';
+import AdminShareFood from './pages/admin/AdminShareFood.jsx';
 import { AuthProvider, useAuthContext } from './utils/AuthContext';
 import { GoodsProvider } from './utils/stores/goodsStore.jsx';
 import AdminRoute from './components/admin/AdminRoute.jsx';
@@ -156,6 +157,7 @@ function AppContent() {
                 <Route path="/admin/verifications" element={<AdminRoute><VerificationManagement /></AdminRoute>} />
                 <Route path="/admin/approval-codes" element={<AdminRoute><ApprovalCodeManagement /></AdminRoute>} />
                 <Route path="/admin/communities" element={<AdminRoute><CommunityManagement /></AdminRoute>} />
+                <Route path="/admin/share-food" element={<AdminRoute><AdminShareFood /></AdminRoute>} />
                 <Route path="*" element={<div>Page Not Found</div>} />
             </Routes>
         </MainLayout>
