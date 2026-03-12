@@ -193,7 +193,7 @@ function AdminShareFood() {
                 category: 'produce',
                 quantity,
                 unit: 'lb',
-                community_id: communityId,
+                community_id: parseInt(communityId, 10),
                 pickup_by: pickupBy ? new Date(pickupBy + 'T17:00:00').toISOString() : null,
                 expiry_date: expiryDate || null,
                 full_address: fullAddress || null,
@@ -513,7 +513,7 @@ function AdminShareFood() {
                                         <td className="px-3 py-2">
                                             <select
                                                 value={row.community_id || ''}
-                                                onChange={(e) => handleUpdateRow(row.id, 'community_id', e.target.value)}
+                                                onChange={(e) => handleUpdateRow(row.id, 'community_id', parseInt(e.target.value, 10) || null)}
                                                 className="w-full min-w-[200px] px-3 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2CABE3] focus:border-transparent"
                                             >
                                                 <option value="">Select Community</option>
