@@ -14,23 +14,26 @@ const getNextFriday = () => {
     
     let daysUntilFriday;
     if (dayOfWeek <= 5) {
-        // If today is Sunday-Friday, get this Friday
         daysUntilFriday = 5 - dayOfWeek;
     } else {
-        // If today is Saturday, get next Friday (6 days away)
         daysUntilFriday = 6;
     }
     
     const nextFriday = new Date(today);
     nextFriday.setDate(today.getDate() + daysUntilFriday);
     
-    // Format as "Month dd"
+    // Return ISO date string (YYYY-MM-DD) for database column type "date"
+    return nextFriday.toISOString().split('T')[0];
+};
+
+// Human-readable version for display purposes
+const formatPickupDate = (isoDate) => {
+    const d = new Date(isoDate + 'T00:00:00');
     const months = [
         'January', 'February', 'March', 'April', 'May', 'June',
         'July', 'August', 'September', 'October', 'November', 'December'
     ];
-    
-    return `${months[nextFriday.getMonth()]} ${nextFriday.getDate()}`;
+    return `${months[d.getMonth()]} ${d.getDate()}`;
 };
 
 export default function ClaimFoodForm() {
@@ -164,7 +167,7 @@ export default function ClaimFoodForm() {
                         claimerName: user.name || 'there',
                         foodTitle: food.title || food.name,
                         pickupLocation: community?.name || food.location,
-                        pickupDeadline: pickupDeadline,
+                        pickupDeadline: formatPickupDate(pickupDeadline),
                     });
                 }
 
@@ -378,7 +381,7 @@ export default function ClaimFoodForm() {
                     <div className="flex-1">
                         <h3 className="text-lg font-bold text-red-900 mb-2">Important Pickup Deadline</h3>
                         <p className="text-red-800 leading-relaxed">
-                            Your food must be picked up by <strong>Friday, {pickupDeadline} at 3:30 PM</strong> or it will be marked as unclaimed and added back into inventory for other people to access. You may re-submit your claim if you miss the latest pick-up window.
+                            Your food must be picked up by <strong>Friday, {formatPickupDate(pickupDeadline)} at 3:30 PM</strong> or it will be marked as unclaimed and added back into inventory for other people to access. You may re-submit your claim if you miss the latest pick-up window.
                         </p>
                     </div>
                 </div>
