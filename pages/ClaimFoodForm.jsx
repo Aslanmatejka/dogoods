@@ -140,7 +140,7 @@ export default function ClaimFoodForm() {
                     claimer_id: user.id,
                     receipt_id: receiptId,
                     status: 'approved',
-                    pickup_deadline: pickupDeadline,
+                    pickup_date: pickupDeadline,
                 })
                 .select()
                 .single();
