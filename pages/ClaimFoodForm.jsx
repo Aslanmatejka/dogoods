@@ -116,6 +116,9 @@ export default function ClaimFoodForm() {
             if (!existingReceipts || existingReceipts.length === 0) {
                 const pickupWindow = "Tuesday 2:00 PM - 3:30 PM, Thursday 2:00 PM - 3:30 PM, Friday 7:00 AM - 8:00 AM & 2:00 PM - 3:30 PM";
                 
+                // pickup_by is NOT NULL in the receipts table - set to end of pickup deadline day
+                const pickupByDate = new Date(pickupDeadline + 'T23:59:59');
+
                 const { data: newReceipt, error: receiptError } = await supabase
                     .from('receipts')
                     .insert({
@@ -123,7 +126,8 @@ export default function ClaimFoodForm() {
                         status: 'pending',
                         pickup_location: community?.name || food.location || 'Community Location',
                         pickup_address: community?.location || 'Address not available',
-                        pickup_window: pickupWindow
+                        pickup_window: pickupWindow,
+                        pickup_by: pickupByDate.toISOString()
                     })
                     .select()
                     .single();
