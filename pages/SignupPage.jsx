@@ -127,7 +127,7 @@ function SignupPageContent() {
                 }
             };
 
-            const { user, error } = await signUp(userData);
+            const { user, session, error } = await signUp(userData);
             
             if (error) {
                 console.error('Detailed signup error:', error);
@@ -146,11 +146,19 @@ function SignupPageContent() {
                     })
                     .eq('code', codeValue);
 
-                // Redirect to email confirmation page
-                navigate('/email-confirmation', { 
-                    state: { email: formData.email.toLowerCase().trim() },
-                    replace: true 
-                });
+                if (session) {
+                    // User was auto-confirmed (no email confirmation required)
+                    navigate('/login', { 
+                        state: { message: 'Account created successfully! Please sign in.' },
+                        replace: true 
+                    });
+                } else {
+                    // Email confirmation required
+                    navigate('/email-confirmation', { 
+                        state: { email: formData.email.toLowerCase().trim() },
+                        replace: true 
+                    });
+                }
             }
         } catch (error) {
             console.error('Signup error:', error);

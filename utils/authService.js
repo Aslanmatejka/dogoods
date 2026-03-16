@@ -243,11 +243,15 @@ class AuthService {
         metadata: userData.options?.data
       });
 
+      // Build the site URL for email redirect
+      const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+
       const { data, error } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
         options: {
-          data: userData.options?.data || {}
+          data: userData.options?.data || {},
+          emailRedirectTo: `${siteUrl}/login`
         }
       })
 
@@ -261,7 +265,8 @@ class AuthService {
       }
 
       console.log('Signup successful:', data.user);
-      return { success: true, user: data.user }
+      // Return session so caller can detect if user was auto-confirmed
+      return { success: true, user: data.user, session: data.session }
     } catch (error) {
       console.error('Sign up error:', error)
       reportError(error)

@@ -40,9 +40,13 @@ function EmailConfirmationPage() {
         setResendSuccess(false);
 
         try {
+            const siteUrl = window.location.origin;
             const { error } = await supabase.auth.resend({
                 type: 'signup',
                 email: email,
+                options: {
+                    emailRedirectTo: `${siteUrl}/login`
+                }
             });
 
             if (error) {
@@ -86,6 +90,15 @@ function EmailConfirmationPage() {
                             Click the link in the email to verify your account and get started with DoGoods.
                             The link will expire in 24 hours.
                         </p>
+
+                        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p className="text-xs text-yellow-800">
+                                <i className="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>
+                                <strong>Not seeing the email?</strong> Check your spam/junk folder. 
+                                The email comes from <strong>noreply@mail.app.supabase.io</strong>. 
+                                If it&apos;s not there after a few minutes, click &ldquo;Resend&rdquo; below.
+                            </p>
+                        </div>
                     </div>
 
                     {/* Steps */}
