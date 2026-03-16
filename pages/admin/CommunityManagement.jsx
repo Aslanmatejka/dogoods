@@ -3,6 +3,32 @@ import AdminLayout from './AdminLayout';
 import supabase from '../../utils/supabaseClient';
 import Button from '../../components/common/Button';
 import { toast } from 'react-toastify';
+import { API_CONFIG } from '../../utils/config';
+
+// Geocode an address using Mapbox to get latitude/longitude
+async function geocodeAddress(address) {
+  if (!address) return { latitude: null, longitude: null };
+  const token = API_CONFIG.MAPBOX?.ACCESS_TOKEN;
+  if (!token) {
+    console.warn('No Mapbox token — skipping geocoding');
+    return { latitude: null, longitude: null };
+  }
+  try {
+    const encoded = encodeURIComponent(address);
+    const resp = await fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encoded}.json?access_token=${token}&limit=1&country=us`
+    );
+    if (!resp.ok) throw new Error('Geocoding request failed');
+    const json = await resp.json();
+    const feature = json.features?.[0];
+    if (!feature) return { latitude: null, longitude: null };
+    const [lng, lat] = feature.center;
+    return { latitude: lat, longitude: lng };
+  } catch (err) {
+    console.warn('Geocoding failed:', err.message);
+    return { latitude: null, longitude: null };
+  }
+}
 
 // Direct REST helper to bypass RLS issues (same pattern as ImpactContentManagement)
 const supabaseRest = async (table, method = 'GET', body = null, filters = '') => {
@@ -114,7 +140,9 @@ const CommunityManagement = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('You must be logged in. Please log in to the admin panel.');
 
-      // Build payload, converting lat/lng to numbers if provided
+      // Auto-geocode the address to get lat/lng
+      const geo = await geocodeAddress(formData.location);
+
       const payload = {
         name: formData.name,
         location: formData.location,
@@ -122,8 +150,8 @@ const CommunityManagement = () => {
         phone: formData.phone,
         image: formData.image || null,
         hours: formData.hours || null,
-        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+        latitude: geo.latitude,
+        longitude: geo.longitude,
         is_active: formData.is_active,
         updated_at: new Date().toISOString()
       };
@@ -435,39 +463,9 @@ const CommunityManagement = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Latitude
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      name="latitude"
-                      value={formData.latitude}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2CABE3] focus:border-[#2CABE3]"
-                      placeholder="e.g., 37.8044"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Longitude
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      name="longitude"
-                      value={formData.longitude}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2CABE3] focus:border-[#2CABE3]"
-                      placeholder="e.g., -122.2712"
-                    />
-                  </div>
-                  <p className="col-span-2 text-xs text-gray-500 -mt-2">
-                    Coordinates for map display. Use Google Maps to find lat/lng.
-                  </p>
-                </div>
+                <p className="text-xs text-gray-500">
+                  Coordinates will be automatically determined from the address above.
+                </p>
 
                 <div className="flex items-center">
                   <input
