@@ -129,11 +129,16 @@ function SignupPageContent() {
                 }
             };
 
-            const { user, session, error } = await signUp(userData);
+            const { user, session, emailRateLimited, error } = await signUp(userData);
             
             if (error) {
                 console.error('Detailed signup error:', error);
-                setErrors({ form: error.message || 'Error during signup. Please try again.' });
+                const msg = error.message || '';
+                if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('email rate') || error.status === 429) {
+                    setErrors({ form: 'Too many accounts created recently. Please wait a few minutes and try again, or contact your administrator.' });
+                } else {
+                    setErrors({ form: msg || 'Error during signup. Please try again.' });
+                }
                 return;
             }
 
@@ -148,10 +153,12 @@ function SignupPageContent() {
                     })
                     .eq('code', codeValue);
 
-                if (session) {
-                    // User was auto-confirmed (no email confirmation required)
+                if (session || emailRateLimited) {
+                    // User was auto-confirmed, or email was rate limited (account still created)
                     navigate('/login', { 
-                        state: { message: 'Account created successfully! Please sign in.' },
+                        state: { message: emailRateLimited
+                            ? 'Account created! Sign in below. (Confirmation email could not be sent — contact your admin if you have issues.)'
+                            : 'Account created successfully! Please sign in.' },
                         replace: true 
                     });
                 } else {

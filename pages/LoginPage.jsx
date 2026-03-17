@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useAuth } from "../utils/hooks/useSupabase";
 import { useAuthContext } from "../utils/AuthContext";
 import Button from "../components/common/Button";
@@ -7,6 +7,7 @@ import React from "react";
 
 function LoginPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchParams] = useSearchParams();
     const { signIn } = useAuth();
     const { isAuthenticated, loading: authLoading } = useAuthContext();
@@ -18,7 +19,7 @@ function LoginPage() {
 
     const [error, setError] = React.useState(null);
     const [submitting, setSubmitting] = React.useState(false);
-    const [successMessage, setSuccessMessage] = React.useState(null);
+    const [successMessage, setSuccessMessage] = React.useState(() => location.state?.message || null);
     const [showPassword, setShowPassword] = React.useState(false);
 
     // Redirect if already authenticated
