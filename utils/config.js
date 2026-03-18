@@ -4,7 +4,7 @@ const ENV = (typeof window !== 'undefined' && window.__ENV__) || {};
 // API Configuration
 const API_CONFIG = {
     DEEPSEEK: {
-        API_KEY: ENV.DEEPSEEK_API_KEY || 'sk-4e56de010f4544cfb8c45c742faa4faf',
+        API_KEY: ENV.DEEPSEEK_API_KEY || '',
         API_ENDPOINT: ENV.DEEPSEEK_API_ENDPOINT || 'https://api.deepseek.com/v1',
         MODEL_VERSION: ENV.DEEPSEEK_MODEL_VERSION || '1.0.0',
         TIMEOUT: parseInt(ENV.API_TIMEOUT) || 30000, // 30 seconds

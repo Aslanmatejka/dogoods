@@ -1,4 +1,3 @@
-export default FindFoodPage;
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation as useRouterLocation } from 'react-router-dom';
 import Button from "../components/common/Button";
@@ -53,20 +52,6 @@ function FindFoodPage({ initialCategory }) {
         sortBy: 'newest',
         community: ''
     });
-    const [formData, setFormData] = useState({
-        requester_name: '',
-        requester_email: '',
-        requester_phone: '',
-        school_district: '',
-        school: '',
-        school_contact: '',
-        school_contact_email: '',
-        school_contact_phone: '',
-        category: '',
-        dietary_restrictions: '',
-        pickup_dropoff: ''
-    });
-
     // Initial data load and category/community from URL
     useEffect(() => {
         // Scroll to top when page loads
@@ -141,58 +126,6 @@ function FindFoodPage({ initialCategory }) {
                 : location.pathname;
             navigate(newUrl, { replace: true });
         }
-    };
-
-    const handleFormChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
-    const findSimilarItems = async (food) => {
-        try {
-            if (similarItems[food.objectId]) {
-                return similarItems[food.objectId];
-            }
-
-            const request = {
-                type: food.type,
-                description: food.description,
-                location: food.location,
-                value: food.estimatedValue,
-                urgency: food.urgency || 'normal',
-                user: food.donor.objectId // Assuming food object has a donor property with objectId
-            };
-
-            const matches = await matchingEngine.findMatches(request, foods);
-            const similar = matches
-                .filter(match => 
-                    match.offer.objectId !== food.objectId && 
-                    match.scores.total > 0.6
-                )
-                .slice(0, 3)
-                .map(match => ({
-                    ...match.offer,
-                    matchScore: Math.round(match.scores.total * 100)
-                }));
-
-            setSimilarItems(prev => ({
-                ...prev,
-                [food.objectId]: similar
-            }));
-
-            return similar;
-        } catch (error) {
-            console.error('Find similar items error:', error);
-            return [];
-        }
-    };
-
-    const handleViewItem = async (food) => {
-        // Find similar items when viewing details
-        await findSimilarItems(food);
     };
 
     const filteredFoods = useMemo(() => {
@@ -419,7 +352,6 @@ function FindFoodPage({ initialCategory }) {
                                     <FoodCard
                                         food={food}
                                         onClaim={handleClaim}
-                                        onViewDetails={handleViewItem}
                                     />
                                 </div>
                             ))
@@ -430,3 +362,5 @@ function FindFoodPage({ initialCategory }) {
         </div>
     );
 }
+
+export default FindFoodPage;

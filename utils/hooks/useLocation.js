@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { locationService } from '../locationService';
 
 export function useGeoLocation() {
@@ -6,6 +6,7 @@ export function useGeoLocation() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [watching, setWatching] = useState(false);
+    const watchingRef = useRef(false);
 
     useEffect(() => {
         // Check if we have permission when the hook is first used
@@ -13,9 +14,8 @@ export function useGeoLocation() {
         
         // Cleanup any watching when component unmounts
         return () => {
-            if (watching) {
+            if (watchingRef.current) {
                 locationService.stopWatchingPosition();
-                setWatching(false);
             }
         };
     }, []);
@@ -48,11 +48,12 @@ export function useGeoLocation() {
     };
 
     const startWatching = () => {
-        if (!watching) {
+        if (!watchingRef.current) {
             locationService.startWatchingPosition((position) => {
                 setLocation(position);
             });
             setWatching(true);
+            watchingRef.current = true;
         }
     };
 

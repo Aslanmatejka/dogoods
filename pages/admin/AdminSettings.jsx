@@ -9,8 +9,7 @@ import { useAuth } from '../../utils/hooks/useSupabase';
 function AdminSettings() {
     const { user: authUser, isAdmin } = useAuth();
     
-    try {
-        const [loading, setLoading] = React.useState(false);
+    const [loading, setLoading] = React.useState(false);
         const [success, setSuccess] = React.useState(null);
         const [error, setError] = React.useState(null);
         const [maintenanceMode, setMaintenanceMode] = React.useState(false);
@@ -650,11 +649,6 @@ function AdminSettings() {
                 </div>
             </AdminLayout>
         );
-    } catch (error) {
-        console.error('AdminSettings error:', error);
-        reportError(error);
-        return null;
-    }
 }
 
 export default AdminSettings;
