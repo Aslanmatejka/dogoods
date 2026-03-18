@@ -257,15 +257,6 @@ class AuthService {
 
       if (error) {
         console.error('Supabase signup error:', error);
-        // If email rate limit hit but user was still created, proceed without email confirmation
-        // This happens on Supabase free tier (limit ~3 emails/hr)
-        const isRateLimit = error.status === 429 ||
-          error.message?.toLowerCase().includes('rate limit') ||
-          error.message?.toLowerCase().includes('email rate');
-        if (isRateLimit && data?.user) {
-          console.warn('Email rate limited but account was created — proceeding without confirmation email');
-          return { success: true, user: data.user, session: data.session, emailRateLimited: true };
-        }
         throw error;
       }
 

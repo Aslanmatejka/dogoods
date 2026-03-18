@@ -129,16 +129,11 @@ function SignupPageContent() {
                 }
             };
 
-            const { user, session, emailRateLimited, error } = await signUp(userData);
+            const { user, session, error } = await signUp(userData);
             
             if (error) {
                 console.error('Detailed signup error:', error);
-                const msg = error.message || '';
-                if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('email rate') || error.status === 429) {
-                    setErrors({ form: 'Too many accounts created recently. Please wait a few minutes and try again, or contact your administrator.' });
-                } else {
-                    setErrors({ form: msg || 'Error during signup. Please try again.' });
-                }
+                setErrors({ form: error.message || 'Error during signup. Please try again.' });
                 return;
             }
 
@@ -153,26 +148,19 @@ function SignupPageContent() {
                     })
                     .eq('code', codeValue);
 
-                // Auto-confirm email via Edge Function (bypasses Supabase email rate limits)
-                // The edge function verifies the claimed approval code before confirming
-                if (!session) {
-                    try {
-                        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-                        await fetch(`${supabaseUrl}/functions/v1/confirm-signup`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ userId: user.id })
-                        });
-                    } catch (confirmErr) {
-                        // Non-fatal: log but continue — user may still need to confirm via email
-                        console.warn('Auto-confirm failed:', confirmErr);
-                    }
+                if (session) {
+                    // User was auto-confirmed (no email confirmation required)
+                    navigate('/login', { 
+                        state: { message: 'Account created successfully! Please sign in.' },
+                        replace: true 
+                    });
+                } else {
+                    // Email confirmation required
+                    navigate('/email-confirmation', { 
+                        state: { email: formData.email.toLowerCase().trim() },
+                        replace: true 
+                    });
                 }
-
-                navigate('/login', { 
-                    state: { message: 'Account created successfully! Please sign in.' },
-                    replace: true 
-                });
             }
         } catch (error) {
             console.error('Signup error:', error);

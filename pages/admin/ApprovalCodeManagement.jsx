@@ -106,33 +106,43 @@ const ApprovalCodeManagement = () => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
 
-            // Find the highest existing number for this school code
             const prefix = schoolCode.toUpperCase();
+
+            // Fetch all existing codes for this prefix to avoid duplicates
             const { data: existingCodes } = await supabase
                 .from('approval_codes')
                 .select('code')
-                .like('code', `${prefix}%`)
-                .order('code', { ascending: false })
-                .limit(1);
+                .like('code', `${prefix}%`);
 
-            let startNum = 100001; // Start from 100001 by default
-            if (existingCodes && existingCodes.length > 0) {
-                const lastCode = existingCodes[0].code;
-                const lastNum = parseInt(lastCode.substring(3), 10);
-                startNum = lastNum + 1;
+            const existingSet = new Set((existingCodes || []).map(c => c.code));
+
+            // Generate batch of unique random 6-digit codes (100000–999999)
+            const newCodes = [];
+            const generated = new Set();
+            let attempts = 0;
+            const maxAttempts = quantity * 20;
+
+            while (newCodes.length < quantity && attempts < maxAttempts) {
+                attempts++;
+                // Cryptographically random number in range [100000, 999999]
+                const rand = 100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000);
+                const num = String(rand).padStart(6, '0');
+                const code = `${prefix}${num}`;
+                if (!existingSet.has(code) && !generated.has(code)) {
+                    generated.add(code);
+                    newCodes.push({
+                        code,
+                        school_code: prefix,
+                        community_id: parseInt(selectedCommunity, 10) || selectedCommunity,
+                        is_claimed: false,
+                        created_by: user?.id || null
+                    });
+                }
             }
 
-            // Generate batch of codes
-            const newCodes = [];
-            for (let i = 0; i < quantity; i++) {
-                const num = String(startNum + i).padStart(6, '0');
-                newCodes.push({
-                    code: `${prefix}${num}`,
-                    school_code: prefix,
-                    community_id: parseInt(selectedCommunity, 10) || selectedCommunity,
-                    is_claimed: false,
-                    created_by: user?.id || null
-                });
+            if (newCodes.length < quantity) {
+                alert(`Could only generate ${newCodes.length} unique codes (requested ${quantity}). Try again or reduce the quantity.`);
+                if (newCodes.length === 0) return;
             }
 
             // Insert in batches of 100
