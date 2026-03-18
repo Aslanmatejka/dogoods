@@ -45,6 +45,10 @@ export default function ClaimFoodForm() {
     const [community, setCommunity] = React.useState(null);
     const [loading, setLoading] = React.useState(true);
     const [claiming, setClaiming] = React.useState(false);
+    const MAX_CLAIM = 2;
+    const availableQty = food ? Math.max(1, parseInt(food.quantity) || 1) : 1;
+    const maxAllowed = Math.min(MAX_CLAIM, availableQty);
+    const [claimQty, setClaimQty] = React.useState(1);
 
     React.useEffect(() => {
         const fetchCommunity = async () => {
@@ -151,13 +155,14 @@ export default function ClaimFoodForm() {
                     requester_phone: user.phone || null,
                     status: 'approved',
                     pickup_date: pickupDeadline,
+                    quantity: claimQty,
                 })
                 .select()
                 .single();
 
             if (claimError) throw claimError;
 
-            // Update food listing status (non-blocking — claim is already saved)
+            // Update food listing: decrement quantity, or mark claimed if fully taken
             try {
                 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
                 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -166,6 +171,11 @@ export default function ClaimFoodForm() {
                     const session = JSON.parse(localStorage.getItem('sb-ifzbpqyuhnxbhdcnmvfs-auth-token') || '{}');
                     if (session?.access_token) accessToken = session.access_token;
                 } catch (_) { /* use anon key */ }
+
+                const remainingQty = availableQty - claimQty;
+                const patchBody = remainingQty <= 0
+                    ? { status: 'claimed' }
+                    : { quantity: remainingQty };
 
                 const patchResp = await fetch(
                     `${supabaseUrl}/rest/v1/food_listings?id=eq.${food.id}`,
@@ -177,15 +187,14 @@ export default function ClaimFoodForm() {
                             Authorization: `Bearer ${accessToken}`,
                             Prefer: 'return=minimal',
                         },
-                        body: JSON.stringify({ status: 'claimed' }),
+                        body: JSON.stringify(patchBody),
                     }
                 );
                 if (!patchResp.ok) {
-                    console.warn('Could not update listing status to claimed:', patchResp.status, await patchResp.text());
+                    console.warn('Could not update listing:', patchResp.status, await patchResp.text());
                 }
             } catch (statusErr) {
-                // Don't fail the claim if listing status update fails
-                console.warn('Non-critical: failed to update listing status', statusErr);
+                console.warn('Non-critical: failed to update listing', statusErr);
             }
 
             // Send SMS notifications if phone numbers are available
@@ -289,10 +298,32 @@ export default function ClaimFoodForm() {
                         <div className="border-t border-gray-200 pt-4 space-y-3">
                             <div className="flex items-center">
                                 <i className="fas fa-box text-[#2CABE3] w-6"></i>
-                                <span className="text-gray-700 font-medium">Quantity:</span>
+                                <span className="text-gray-700 font-medium">Available:</span>
                                 <span className="ml-2 text-gray-900">
                                     {food.quantity || "N/A"} {food.unit || ""}
                                 </span>
+                            </div>
+
+                            {/* Quantity selector */}
+                            <div className="flex items-center">
+                                <i className="fas fa-hand-holding text-[#2CABE3] w-6"></i>
+                                <span className="text-gray-700 font-medium">How many do you want?</span>
+                                <div className="ml-3 flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setClaimQty(q => Math.max(1, q - 1))}
+                                        className="w-8 h-8 rounded-full border-2 border-[#2CABE3] text-[#2CABE3] font-bold text-lg flex items-center justify-center hover:bg-[#2CABE3] hover:text-white transition-colors disabled:opacity-40"
+                                        disabled={claimQty <= 1}
+                                    >−</button>
+                                    <span className="w-8 text-center text-lg font-bold text-gray-900">{claimQty}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setClaimQty(q => Math.min(maxAllowed, q + 1))}
+                                        className="w-8 h-8 rounded-full border-2 border-[#2CABE3] text-[#2CABE3] font-bold text-lg flex items-center justify-center hover:bg-[#2CABE3] hover:text-white transition-colors disabled:opacity-40"
+                                        disabled={claimQty >= maxAllowed}
+                                    >+</button>
+                                    <span className="text-sm text-gray-500">{food.unit || ""} (max {maxAllowed})</span>
+                                </div>
                             </div>
 
                             <div className="flex items-center">
