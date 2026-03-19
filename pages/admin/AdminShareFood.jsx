@@ -535,6 +535,11 @@ function AdminShareFood() {
                                             className="w-full px-1 py-1 text-xs border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#2CABE3] focus:border-transparent"
                                         >
                                             <option value="items">items</option>
+                                            <option value="lbs">lbs</option>
+                                            <option value="oz">oz</option>
+                                            <option value="fl oz">fl oz</option>
+                                            <option value="grams">grams</option>
+                                            <option value="kg">kg</option>
                                             <option value="servings">servings</option>
                                             <option value="boxes">boxes</option>
                                             <option value="bags">bags</option>
@@ -557,8 +562,11 @@ function AdminShareFood() {
                                             className="w-full px-1 py-1 text-xs border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#2CABE3] focus:border-transparent"
                                         >
                                             <option value="lb">lb</option>
-                                            <option value="kg">kg</option>
+                                            <option value="lbs">lbs</option>
                                             <option value="oz">oz</option>
+                                            <option value="fl oz">fl oz</option>
+                                            <option value="grams">grams</option>
+                                            <option value="kg">kg</option>
                                         </select>
                                     </td>
                                     <td className="px-3 py-2">
@@ -644,6 +652,11 @@ function AdminShareFood() {
                                                 className="w-full px-1 py-1 text-xs border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#2CABE3] focus:border-transparent"
                                             >
                                                 <option value="items">items</option>
+                                                <option value="lbs">lbs</option>
+                                                <option value="oz">oz</option>
+                                                <option value="fl oz">fl oz</option>
+                                                <option value="grams">grams</option>
+                                                <option value="kg">kg</option>
                                                 <option value="servings">servings</option>
                                                 <option value="boxes">boxes</option>
                                                 <option value="bags">bags</option>
@@ -665,8 +678,11 @@ function AdminShareFood() {
                                                 className="w-full px-1 py-1 text-xs border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#2CABE3] focus:border-transparent"
                                             >
                                                 <option value="lb">lb</option>
-                                                <option value="kg">kg</option>
+                                                <option value="lbs">lbs</option>
                                                 <option value="oz">oz</option>
+                                                <option value="fl oz">fl oz</option>
+                                                <option value="grams">grams</option>
+                                                <option value="kg">kg</option>
                                             </select>
                                         </td>
                                         <td className="px-3 py-2">

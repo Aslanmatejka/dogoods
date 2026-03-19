@@ -195,10 +195,13 @@ api_key = ""
 api_secret = ""
 
 [auth.email.smtp]
+# For production, configure Resend SMTP in Supabase Dashboard:
+# Host: smtp.resend.com, Port: 465, User: resend, Pass: your-resend-api-key
+# For local dev, set enabled = true and fill in credentials below
 enabled = false
-host = ""
-port = 587
-user = ""
-pass = ""
-admin_email = ""
-sender_name = "" 
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "noreply@dogoods.app"
+sender_name = "DoGoods" 

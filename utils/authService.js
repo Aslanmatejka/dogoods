@@ -1,5 +1,5 @@
 // Inject is_admin claim into Supabase session for local admin testing
-import supabase from './supabaseClient.js';
+import supabase, { SUPABASE_AUTH_KEY } from './supabaseClient.js';
 
 export async function injectAdminClaim(userId) {
   const { data: profile, error } = await supabase
@@ -77,9 +77,13 @@ class AuthService {
       } else if (sessionError) {
         // Network error or other issue - keep localStorage state so user stays on page
         console.warn('getSession error, keeping local state:', sessionError.message)
+      } else {
+        // No session and no error: user is truly signed out.
+        // Clear any stale localStorage state so they don't appear logged in.
+        if (this.isAuthenticated) {
+          this.clearUser()
+        }
       }
-      // If no session and no error: keep localStorage state as-is.
-      // User stays on current page. Auth only clears on explicit sign out.
 
       // Step 2: Listen for future auth changes
       supabase.auth.onAuthStateChange(async (event, session) => {
@@ -97,13 +101,10 @@ class AuthService {
         } else if (event === 'PASSWORD_RECOVERY' && session) {
           await this.setUser(session.user)
         } else if (event === 'SIGNED_OUT') {
-          // Only clear our state if the user explicitly signed out
-          // Supabase fires SIGNED_OUT when tokens expire, but we want to
-          // keep the user on the page (they'll re-auth naturally on next API call)
-          if (this._userExplicitlySignedOut) {
-            this.clearUser()
-            this._userExplicitlySignedOut = false
-          }
+          // Always clear state when Supabase says signed out.
+          // This handles both explicit sign-out and session expiry.
+          this.clearUser()
+          this._userExplicitlySignedOut = false
         }
       })
 
@@ -326,24 +327,31 @@ class AuthService {
 
   async signOut() {
     try {
-      // Mark that the user explicitly chose to sign out
-      // This allows the onAuthStateChange SIGNED_OUT handler to clear state
       this._userExplicitlySignedOut = true
 
-      // Clear user state immediately
+      // Sign out from Supabase FIRST (while token is still available)
+      try {
+        const { error } = await supabase.auth.signOut()
+        if (error) {
+          console.error('Supabase signOut error:', error)
+        }
+      } catch (e) {
+        console.error('Supabase signOut exception:', e)
+      }
+
+      // Clear user state
       this.clearUser()
 
-      // Then sign out from Supabase
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error('Supabase signOut error:', error)
-      }
+      // Remove Supabase's own auth token as a safety net
+      // so getSession() won't find a stale session on next page load
+      try { localStorage.removeItem(SUPABASE_AUTH_KEY) } catch (_) {}
 
       return { success: true }
     } catch (error) {
       console.error('Sign out error:', error)
       this._userExplicitlySignedOut = true
       this.clearUser()
+      try { localStorage.removeItem(SUPABASE_AUTH_KEY) } catch (_) {}
       reportError(error)
       return { success: true }
     }
