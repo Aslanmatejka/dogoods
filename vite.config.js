@@ -28,7 +28,8 @@ export default defineConfig(({ mode }) => {
       }
     },
     define: {
-      'process.env': env
+      'process.env.NODE_ENV': JSON.stringify(env.NODE_ENV || 'development'),
+      'process.env.PORT': JSON.stringify(env.PORT || '3001'),
     },
     worker: {
       format: 'es'

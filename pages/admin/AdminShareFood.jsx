@@ -94,17 +94,29 @@ async function supabaseRest(path, method, body = null, extraHeaders = {}) {
     return null;
 }
 
+// Validate a date string is a real calendar date (rejects 4/31, 2/30, etc.)
+function isValidDate(dateStr) {
+    if (!dateStr) return true; // empty is allowed (optional field)
+    const d = new Date(dateStr + 'T00:00:00');
+    if (isNaN(d.getTime())) return false;
+    // Check the parsed date matches the input (catches invalid days like Feb 30)
+    const [y, m, day] = dateStr.split('-').map(Number);
+    return d.getFullYear() === y && d.getMonth() + 1 === m && d.getDate() === day;
+}
+
 // Uncontrolled input to avoid re-renders (same pattern as ImpactDataEntry)
-const UncontrolledCell = ({ defaultValue, onBlur, type = 'text', inputRef, className }) => (
+const UncontrolledCell = ({ defaultValue, onBlur, type = 'text', inputRef, className, readOnly, min }) => (
     <input
         ref={inputRef}
         type={type}
         defaultValue={defaultValue}
+        readOnly={readOnly}
+        min={min}
         onBlur={(e) => {
             const value = type === 'number' ? (parseFloat(e.target.value) || 0) : e.target.value;
             onBlur(value);
         }}
-        className={className || "w-full px-1 py-1 text-xs border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#2CABE3] focus:border-transparent"}
+        className={`${className || "w-full px-1 py-1 text-xs border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#2CABE3] focus:border-transparent"} ${readOnly ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
     />
 );
 
@@ -113,8 +125,11 @@ function AdminShareFood() {
     const [data, setData] = React.useState([]);
     const [loading, setLoading] = React.useState(true);
     const [refreshing, setRefreshing] = React.useState(false);
+    const [adding, setAdding] = React.useState(false);
     const [communities, setCommunities] = React.useState([]);
     const [dateFilter, setDateFilter] = React.useState('current-week');
+    const scrollContainerRef = React.useRef(null);
+    const topScrollRef = React.useRef(null);
 
     // Refs for new row inputs (uncontrolled) — same pattern as ImpactDataEntry
     const newRowRefs = React.useRef({
@@ -220,6 +235,7 @@ function AdminShareFood() {
 
     // Add new row
     const handleAddRow = async () => {
+        if (adding) return; // Prevent double-click submissions
         try {
             const date = newRowRefs.current.date?.value || new Date().toISOString().split('T')[0];
             const communityId = newRowRefs.current.community_id?.value;
@@ -235,7 +251,10 @@ function AdminShareFood() {
 
             if (!title) { alert('⚠️ Food name is required.'); return; }
             if (!communityId) { alert('⚠️ Please select a community.'); return; }
-            if (!quantity) { alert('⚠️ Quantity is required.'); return; }
+            if (quantity < 1) { alert('⚠️ Quantity must be at least 1.'); return; }
+            if (expiryDate && !isValidDate(expiryDate)) { alert('⚠️ Invalid Expiry Date. Please enter a real calendar date.'); return; }
+
+            setAdding(true);
 
             // Geocode address to get lat/lng for map display
             const geo = await geocodeAddress(fullAddress);
@@ -295,6 +314,8 @@ function AdminShareFood() {
             } else {
                 alert('❌ Failed to add food listing: ' + msg);
             }
+        } finally {
+            setAdding(false);
         }
     };
 
@@ -442,7 +463,30 @@ function AdminShareFood() {
                         <p className="mt-4 text-gray-600">Loading data...</p>
                     </div>
                 ) : (
-                    <div className="bg-white rounded-lg shadow overflow-x-auto overflow-y-auto text-xs" style={{maxHeight: 'calc(100vh - 280px)'}}>
+                    <>
+                    {/* Top scrollbar — mirrors the table's horizontal scroll */}
+                    <div
+                        ref={topScrollRef}
+                        className="overflow-x-auto bg-gray-100 rounded-t-lg"
+                        style={{ overflowY: 'hidden', height: '14px' }}
+                        onScroll={(e) => {
+                            if (scrollContainerRef.current) {
+                                scrollContainerRef.current.scrollLeft = e.target.scrollLeft;
+                            }
+                        }}
+                    >
+                        <div style={{ width: '1500px', height: '1px' }} />
+                    </div>
+                    <div
+                        ref={scrollContainerRef}
+                        className="bg-white rounded-b-lg shadow overflow-x-auto overflow-y-auto text-xs"
+                        style={{maxHeight: 'calc(100vh - 294px)'}}
+                        onScroll={(e) => {
+                            if (topScrollRef.current) {
+                                topScrollRef.current.scrollLeft = e.target.scrollLeft;
+                            }
+                        }}
+                    >
                         <table className="min-w-full divide-y divide-gray-200 [&_td]:px-1 [&_td]:py-1">
                             <thead className="bg-gray-50 sticky top-0 z-10">
                                 <tr>
@@ -523,6 +567,7 @@ function AdminShareFood() {
                                         <UncontrolledCell
                                             type="number"
                                             defaultValue=""
+                                            min="1"
                                             inputRef={el => newRowRefs.current.quantity = el}
                                             onBlur={() => {}}
                                             className="w-full px-1 py-1 text-xs border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#2CABE3] focus:border-transparent"
@@ -535,15 +580,10 @@ function AdminShareFood() {
                                             className="w-full px-1 py-1 text-xs border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#2CABE3] focus:border-transparent"
                                         >
                                             <option value="items">items</option>
-                                            <option value="lbs">lbs</option>
-                                            <option value="oz">oz</option>
-                                            <option value="fl oz">fl oz</option>
-                                            <option value="grams">grams</option>
-                                            <option value="kg">kg</option>
-                                            <option value="servings">servings</option>
                                             <option value="boxes">boxes</option>
                                             <option value="bags">bags</option>
                                             <option value="cans">cans</option>
+                                            <option value="jars">jars</option>
                                         </select>
                                     </td>
                                     <td className="px-3 py-2">
@@ -558,10 +598,9 @@ function AdminShareFood() {
                                     <td className="px-3 py-2">
                                         <select
                                             ref={el => newRowRefs.current.weight_unit = el}
-                                            defaultValue="lb"
+                                            defaultValue="lbs"
                                             className="w-full px-1 py-1 text-xs border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#2CABE3] focus:border-transparent"
                                         >
-                                            <option value="lb">lb</option>
                                             <option value="lbs">lbs</option>
                                             <option value="oz">oz</option>
                                             <option value="fl oz">fl oz</option>
@@ -603,8 +642,9 @@ function AdminShareFood() {
                                             variant="primary"
                                             size="sm"
                                             onClick={handleAddRow}
+                                            disabled={adding}
                                         >
-                                            <i className="fas fa-plus"></i>
+                                            {adding ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-plus"></i>}
                                         </Button>
                                     </td>
                                 </tr>
@@ -641,7 +681,11 @@ function AdminShareFood() {
                                             <UncontrolledCell
                                                 type="number"
                                                 defaultValue={row.quantity || 0}
-                                                onBlur={(val) => handleUpdateRow(row.id, 'quantity', val)}
+                                                min="1"
+                                                onBlur={(val) => {
+                                                    if (val < 1) { alert('⚠️ Quantity must be at least 1.'); return; }
+                                                    handleUpdateRow(row.id, 'quantity', val);
+                                                }}
                                                 className="w-full px-1 py-1 text-xs border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#2CABE3] focus:border-transparent"
                                             />
                                         </td>
@@ -652,15 +696,10 @@ function AdminShareFood() {
                                                 className="w-full px-1 py-1 text-xs border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#2CABE3] focus:border-transparent"
                                             >
                                                 <option value="items">items</option>
-                                                <option value="lbs">lbs</option>
-                                                <option value="oz">oz</option>
-                                                <option value="fl oz">fl oz</option>
-                                                <option value="grams">grams</option>
-                                                <option value="kg">kg</option>
-                                                <option value="servings">servings</option>
                                                 <option value="boxes">boxes</option>
                                                 <option value="bags">bags</option>
                                                 <option value="cans">cans</option>
+                                                <option value="jars">jars</option>
                                             </select>
                                         </td>
                                         <td className="px-3 py-2">
@@ -673,11 +712,10 @@ function AdminShareFood() {
                                         </td>
                                         <td className="px-3 py-2">
                                             <select
-                                                value={row.weight_unit || 'lb'}
+                                                value={row.weight_unit || 'lbs'}
                                                 onChange={(e) => handleUpdateRow(row.id, 'weight_unit', e.target.value)}
                                                 className="w-full px-1 py-1 text-xs border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#2CABE3] focus:border-transparent"
                                             >
-                                                <option value="lb">lb</option>
                                                 <option value="lbs">lbs</option>
                                                 <option value="oz">oz</option>
                                                 <option value="fl oz">fl oz</option>
@@ -689,13 +727,17 @@ function AdminShareFood() {
                                             <UncontrolledCell
                                                 type="date"
                                                 defaultValue={row.expiry_date || ''}
-                                                onBlur={(val) => handleUpdateRow(row.id, 'expiry_date', val || null)}
+                                                onBlur={(val) => {
+                                                    if (val && !isValidDate(val)) { alert('⚠️ Invalid Expiry Date. Please enter a real calendar date.'); return; }
+                                                    handleUpdateRow(row.id, 'expiry_date', val || null);
+                                                }}
                                             />
                                         </td>
                                         <td className="px-3 py-2">
                                             <UncontrolledCell
                                                 defaultValue={row.full_address || ''}
-                                                onBlur={(val) => handleUpdateRow(row.id, 'full_address', val)}
+                                                readOnly
+                                                onBlur={() => {}}
                                             />
                                         </td>
                                         <td className="px-3 py-2">
@@ -732,6 +774,7 @@ function AdminShareFood() {
                             </tbody>
                         </table>
                     </div>
+                    </>
                 )}
 
                 {/* Help section */}
