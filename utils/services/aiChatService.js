@@ -39,11 +39,6 @@ class AIChatService {
   async sendMessage(message, { conversationHistory = [], userLocation = null } = {}) {
     try {
       const config = getApiConfig().OPENAI
-      const apiKey = config.API_KEY
-
-      if (!apiKey || !apiKey.startsWith('sk-')) {
-        throw new Error('OpenAI API key not configured')
-      }
 
       let systemContent = SYSTEM_PROMPT
       if (userLocation) {
@@ -59,10 +54,9 @@ class AIChatService {
         { role: 'user', content: message },
       ]
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('/api/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

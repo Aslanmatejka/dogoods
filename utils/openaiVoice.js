@@ -1,13 +1,7 @@
-import { getApiConfig } from './config.js'
-
 /**
  * OpenAI Voice Services — Whisper STT + TTS
+ * All requests go through the Vite proxy (/api/openai) which injects the API key server-side.
  */
-
-function getApiKey() {
-  const config = getApiConfig().OPENAI
-  return config.API_KEY
-}
 
 /**
  * Transcribe audio using OpenAI Whisper API
@@ -16,19 +10,13 @@ function getApiKey() {
  * @returns {Promise<string>} - Transcribed text
  */
 export async function transcribeAudio(audioBlob, language = 'en') {
-  const apiKey = getApiKey()
-  if (!apiKey) throw new Error('OpenAI API key not configured')
-
   const formData = new FormData()
   formData.append('file', audioBlob, 'audio.webm')
   formData.append('model', 'whisper-1')
   formData.append('language', language === 'es' ? 'es' : 'en')
 
-  const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+  const response = await fetch('/api/openai/v1/audio/transcriptions', {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-    },
     body: formData,
   })
 
@@ -48,15 +36,11 @@ export async function transcribeAudio(audioBlob, language = 'en') {
  * @returns {Promise<Blob>} - Audio blob (mp3)
  */
 export async function textToSpeech(text, options = {}) {
-  const apiKey = getApiKey()
-  if (!apiKey) throw new Error('OpenAI API key not configured')
-
   const { voice = 'nova', speed = 1.0 } = options
 
-  const response = await fetch('https://api.openai.com/v1/audio/speech', {
+  const response = await fetch('/api/openai/v1/audio/speech', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({

@@ -20,7 +20,17 @@ export default defineConfig(({ mode }) => {
     server: {
       port: env.PORT || 3001,
       open: true,
-      historyApiFallback: true
+      historyApiFallback: true,
+      proxy: {
+        '/api/openai': {
+          target: 'https://api.openai.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/openai/, ''),
+          headers: {
+            'Authorization': `Bearer ${env.VITE_OPENAI_API_KEY || ''}`,
+          },
+        },
+      },
     },
     resolve: {
       alias: {
