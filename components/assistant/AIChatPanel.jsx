@@ -368,10 +368,17 @@ function AIChatPanel() {
 
         try {
           const text = await transcribeAudio(audioBlob, language)
-          if (text && text.trim()) {
-            setVoiceTranscript(text.trim())
-            sendMessageRef.current(text.trim())
+          const trimmed = text?.trim() || ''
+          // Filter out noise: too short, or common Whisper hallucinations on silence/noise
+          const NOISE_PHRASES = ['thank you', 'thanks', 'bye', 'you', 'the', 'i', 'a', 'um', 'uh',
+            'thank you for watching', 'thanks for watching', 'subscribe', 'like and subscribe',
+            'music', '...', '…', 'foreign', 'applause', 'laughter']
+          const isNoise = trimmed.length < 3 || NOISE_PHRASES.includes(trimmed.toLowerCase())
+          if (trimmed && !isNoise) {
+            setVoiceTranscript(trimmed)
+            sendMessageRef.current(trimmed)
           } else {
+            console.log('[Voice] Filtered noise transcription:', trimmed)
             setVoiceTranscript('')
           }
         } catch (err) {
@@ -487,14 +494,14 @@ function AIChatPanel() {
     }
   }, [isVoiceSpeaking, isVoiceListening, isLoading, interruptSpeaking, stopRecording, startVoiceListening])
 
-  // Auto-start listening when idle in voice mode
+  // Auto-start listening when idle in voice mode (delay after TTS to avoid echo)
   useEffect(() => {
     if (!voiceMode || isVoiceSpeaking || isLoading || isVoiceListening || voiceError) return
     const timer = setTimeout(() => {
       if (voiceModeRef.current && !voiceError) {
         startVoiceListening()
       }
-    }, 600)
+    }, 1200)
     return () => clearTimeout(timer)
   }, [voiceMode, isVoiceSpeaking, isLoading, isVoiceListening, voiceError, startVoiceListening])
 
@@ -515,6 +522,11 @@ function AIChatPanel() {
           .replace(/\s+/g, ' ')
           .trim()
         if (!cleanText) return
+
+        // Mute the mic stream to prevent feedback loop (AI voice → mic → Whisper → sends message)
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getAudioTracks().forEach(t => { t.enabled = false })
+        }
 
         setIsVoiceSpeaking(true)
         try {
@@ -547,6 +559,13 @@ function AIChatPanel() {
       } catch (err) {
         console.error('Voice output failed:', err)
         setIsVoiceSpeaking(false)
+      } finally {
+        // Re-enable mic tracks after TTS finishes (with delay to avoid echo)
+        setTimeout(() => {
+          if (mediaStreamRef.current) {
+            mediaStreamRef.current.getAudioTracks().forEach(t => { t.enabled = true })
+          }
+        }, 500)
       }
     }
     speakWithOpenAI()
