@@ -35,7 +35,7 @@ logger = logging.getLogger("ai_engine")
 # Configuration
 # ---------------------------------------------------------------------------
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "") or os.getenv("VITE_OPENAI_API_KEY", "")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
 # All AI calls use OpenAI (GPT-4o, Whisper, TTS)
 OPENAI_BASE_URL = "https://api.openai.com/v1"
