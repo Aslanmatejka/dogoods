@@ -1,11 +1,7 @@
 // Development configuration template
 // Copy this file to config.js and replace with your actual values
+// NOTE: OpenAI API key is backend-only. All AI calls go through /api/ai/*
 window.__ENV__ = {
-    // OpenAI Configuration
-    OPENAI_API_KEY: '', // Set your OpenAI API key here
-    OPENAI_API_ENDPOINT: 'https://api.openai.com/v1',
-    OPENAI_CHAT_MODEL: 'gpt-4o-mini',
-    
     // Mapbox Configuration
     VITE_MAPBOX_TOKEN: '', // Set your Mapbox token here
     

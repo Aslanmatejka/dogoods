@@ -1,12 +1,8 @@
 // Browser environment configuration
 // IMPORTANT: Replace placeholder values with your actual keys
 // Do NOT commit real API keys to version control
+// NOTE: OpenAI API key is backend-only. All AI calls go through /api/ai/*
 window.__ENV__ = {
-    // OpenAI Configuration
-    OPENAI_API_KEY: '', // Set your OpenAI API key here or in .env.local
-    OPENAI_API_ENDPOINT: 'https://api.openai.com/v1',
-    OPENAI_CHAT_MODEL: 'gpt-4o-mini',
-    
     // Mapbox Configuration
     VITE_MAPBOX_TOKEN: '', // Set your Mapbox token here
     

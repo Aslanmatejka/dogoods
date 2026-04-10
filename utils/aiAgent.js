@@ -1,26 +1,28 @@
-import openaiClient from './openaiClient.js';
-import { getApiConfig } from './config.js';
+/**
+ * AI Agent — routes all AI calls through the FastAPI backend at /api/ai/chat.
+ * No direct OpenAI calls from the frontend.
+ */
 
-// Rate limiting system
+const API_BASE = '/api/ai'
+
+// Rate limiting (client-side courtesy throttle)
 const rateLimitStore = new Map();
 
-async function checkRateLimit(clientId = 'default') {
+function checkRateLimit(clientId = 'default') {
     const now = Date.now();
-    const config = getApiConfig().RATE_LIMITS.DEFAULT;
+    const timeWindow = 60000;
+    const maxRequests = 50;
     
     if (!rateLimitStore.has(clientId)) {
         rateLimitStore.set(clientId, { requests: [], windowStart: now });
     }
     
     const clientData = rateLimitStore.get(clientId);
+    clientData.requests = clientData.requests.filter(time => now - time < timeWindow);
     
-    // Clean old requests outside the time window
-    clientData.requests = clientData.requests.filter(time => now - time < config.timeWindow);
-    
-    if (clientData.requests.length >= config.maxRequests) {
+    if (clientData.requests.length >= maxRequests) {
         throw new Error('Rate limit exceeded. Please try again later.');
     }
-    
     clientData.requests.push(now);
 }
 
@@ -405,40 +407,39 @@ function validateInput(value, type, fieldName) {
     return true;
 }
 
-// Update the invokeAIAgent function to use DeepSeek
+// Update the invokeAIAgent function to use backend
 async function invokeAIAgent(systemPrompt, userPrompt, options = {}) {
     const {
-        retries = getApiConfig().OPENAI.MAX_RETRIES,
-        timeout = getApiConfig().OPENAI.TIMEOUT,
+        retries = 2,
         clientId = 'default',
-        backoffMultiplier = 2
     } = options;
 
-    await checkRateLimit(clientId);
+    checkRateLimit(clientId);
 
     return circuitBreaker.executeRequest(async () => {
         let lastError = null;
         for (let i = 0; i < retries; i++) {
             try {
-                const messages = [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt }
-                ];
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 30000);
 
-                const response = await openaiClient.chat(messages, {
-                    temperature: 0.7,
-                    max_tokens: 1000
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: `${systemPrompt}\n\nUser request: ${userPrompt}`,
+                        user_id: 'agent-helper',
+                    }),
+                    signal: controller.signal,
                 });
+                clearTimeout(timeout);
 
-                // Handle the response properly - OpenAI API returns content in choices
-                let content;
-                if (response.choices && response.choices[0] && response.choices[0].message) {
-                    content = response.choices[0].message.content;
-                } else if (typeof response === 'string') {
-                    content = response;
-                } else {
-                    throw new Error('Unexpected response format from OpenAI API');
+                if (!response.ok) {
+                    throw new Error(`Backend error: ${response.status}`);
                 }
+
+                const data = await response.json();
+                const content = data.text || '';
 
                 // Try to parse as JSON, if it fails, return as text
                 try {
@@ -446,34 +447,19 @@ async function invokeAIAgent(systemPrompt, userPrompt, options = {}) {
                     validateResponse(result);
                     return result;
                 } catch (parseError) {
-                    // If not JSON, return as text content
                     return { content: content, type: 'text' };
                 }
             } catch (error) {
                 lastError = error;
-                console.error(`OpenAI API error (attempt ${i + 1}/${retries}):`, error);
+                console.error(`Backend AI error (attempt ${i + 1}/${retries}):`, error);
                 if (i < retries - 1) {
-                    await new Promise(resolve => setTimeout(resolve, timeout * Math.pow(backoffMultiplier, i)));
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
                 }
             }
         }
 
-        // Fallback to mock responses if API fails after all retries
-        const isAuthError = lastError && (
-            lastError.message.includes('401') || 
-            lastError.message.includes('Unauthorized') ||
-            lastError.message.includes('Authentication')
-        );
-        
-        if (isAuthError) {
-            console.warn('🔄 API authentication failed, falling back to mock response:', lastError.message);
-            return generateMockResponse(systemPrompt, userPrompt);
-        } else if (getApiConfig().isValid) {
-            throw lastError; // If API key is valid but request failed for other reasons
-        } else {
-            console.warn('🔄 Falling back to mock response due to missing API key');
-            return generateMockResponse(systemPrompt, userPrompt);
-        }
+        console.warn('Backend AI failed, falling back to mock response');
+        return generateMockResponse(systemPrompt, userPrompt);
     });
 }
 
