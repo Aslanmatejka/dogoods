@@ -224,6 +224,13 @@ function Header({
                                             >
                                                 My Listings
                                             </a>
+                                            <a
+                                                href="/receipts"
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                role="menuitem"
+                                            >
+                                                My Receipts
+                                            </a>
                                             {authUser?.role === 'admin' && (
                                                 <a
                                                     href="/admin"
@@ -370,6 +377,15 @@ function Header({
                                                 </a>
                                             </li>
                                             */}
+                                            <li>
+                                                <a
+                                                    href="/receipts"
+                                                    className="block px-4 py-2 text-gray-700 hover:bg-[#2CABE3]/10 hover:text-[#2CABE3] rounded-lg"
+                                                    onClick={() => setIsMenuOpen(false)}
+                                                >
+                                                    My Receipts
+                                                </a>
+                                            </li>
                                             {authUser?.role === 'admin' && (
                                                 <li>
                                                     <a

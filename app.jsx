@@ -14,6 +14,7 @@ import ShareFoodPage from './pages/ShareFoodPage';
 import UserSettings from './pages/UserSettings';
 import Notifications from './pages/Notifications';
 import UserListings from './pages/UserListings';
+import UserReceipts from './pages/UserReceipts';
 import FindFoodPage from './pages/FindFoodPage';
 import NearMePage from './pages/NearMePage';
 import Blog from './pages/Blog';
@@ -143,6 +144,7 @@ function AppContent() {
                 <Route path="/settings" element={<ProtectedRoute><UserSettings /></ProtectedRoute>} />
                 <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
                 <Route path="/listings" element={<ProtectedRoute><UserListings /></ProtectedRoute>} />
+                <Route path="/receipts" element={<ProtectedRoute><UserReceipts /></ProtectedRoute>} />
                 <Route path="/donations" element={<ProtectedRoute><DonationSchedules /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                 <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
