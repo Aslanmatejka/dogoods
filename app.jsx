@@ -34,7 +34,6 @@ import FAQs from './pages/FAQs';
 import ContactPage from './pages/ContactPage';
 import DonatePage from './pages/DonatePage';
 import CommunityDetailPage from './pages/CommunityDetailPage';
-import CommunityPage from './pages/CommunityPage';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import { TutorialProvider } from './utils/TutorialContext.jsx';
 import DistributionAttendees from './pages/admin/DistributionAttendees.jsx';
@@ -116,7 +115,6 @@ function AppContent() {
             <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/community/:id" element={<CommunityDetailPage />} />
-                <Route path="/community" element={<CommunityPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/email-confirmation" element={<EmailConfirmationPage />} />

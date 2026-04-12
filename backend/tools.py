@@ -344,6 +344,36 @@ TOOL_DEFINITIONS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_active_communities",
+            "description": (
+                "Find active local food sharing communities and groups near a user. "
+                "Returns community names, locations, contact info, hours, descriptions, "
+                "and impact stats (food given, families helped). Can optionally filter "
+                "by proximity to a user's location."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_id": {
+                        "type": "string",
+                        "description": (
+                            "Optional user UUID — if provided, sorts communities "
+                            "by distance from the user's location"
+                        ),
+                    },
+                    "max_results": {
+                        "type": "integer",
+                        "description": "Maximum number of communities to return (default 10)",
+                        "default": 10,
+                    },
+                },
+                "required": [],
+            },
+        },
+    },
 ]
 
 
@@ -364,6 +394,7 @@ async def execute_tool(name: str, arguments: dict) -> dict:
         "check_pickup_schedule": _check_pickup_schedule,
         "get_recipes": _get_recipes,
         "get_storage_tips": _get_storage_tips,
+        "get_active_communities": _get_active_communities,
     }
 
     handler = handlers.get(name)
@@ -1396,3 +1427,97 @@ async def _get_storage_tips(
     except Exception as exc:
         logger.error("get_storage_tips AI call failed: %s", exc)
         return {"error": f"Failed to generate storage tips: {str(exc)}"}
+
+
+# ---------------------------------------------------------------------------
+# get_active_communities — local food sharing groups
+# ---------------------------------------------------------------------------
+
+async def _get_active_communities(
+    user_id: str | None = None,
+    max_results: int = 10,
+) -> dict:
+    """Fetch active food sharing communities, optionally sorted by proximity."""
+    from backend.ai_engine import supabase_get
+
+    logger.info("get_active_communities: user_id=%s max=%d", user_id, max_results)
+
+    # Fetch all active communities
+    try:
+        communities = await supabase_get("communities", {
+            "is_active": "eq.true",
+            "select": (
+                "id,name,location,contact,hours,phone,description,"
+                "latitude,longitude,food_given_lb,families_helped,"
+                "school_staff_helped,image"
+            ),
+            "limit": "50",
+        })
+    except Exception as exc:
+        logger.error("Failed to fetch communities: %s", exc)
+        return {"error": f"Could not fetch communities: {str(exc)}"}
+
+    if not communities:
+        return {"communities": [], "total": 0, "summary": "No active communities found."}
+
+    # If user_id provided, get their location and sort by distance
+    user_lat = user_lng = None
+    if user_id:
+        try:
+            rows = await supabase_get("users", {
+                "id": f"eq.{user_id}",
+                "select": "latitude,longitude",
+            })
+            if rows and rows[0].get("latitude") and rows[0].get("longitude"):
+                user_lat = float(rows[0]["latitude"])
+                user_lng = float(rows[0]["longitude"])
+        except Exception as exc:
+            logger.warning("Could not get user location: %s", exc)
+
+    results = []
+    for c in communities:
+        entry = {
+            "name": c.get("name", ""),
+            "address": c.get("location", ""),
+            "contact": c.get("contact", ""),
+            "phone": c.get("phone", ""),
+            "hours": c.get("hours", ""),
+            "description": c.get("description", ""),
+            "impact": {
+                "food_given_lb": c.get("food_given_lb", 0),
+                "families_helped": c.get("families_helped", 0),
+                "school_staff_helped": c.get("school_staff_helped", 0),
+            },
+        }
+
+        c_lat = c.get("latitude")
+        c_lng = c.get("longitude")
+        if user_lat and user_lng and c_lat and c_lng:
+            dist = _haversine(user_lat, user_lng, float(c_lat), float(c_lng))
+            entry["distance_km"] = round(dist, 1)
+            entry["distance_miles"] = round(dist * 0.621371, 1)
+
+        results.append(entry)
+
+    # Sort by distance if available, otherwise by name
+    if user_lat:
+        results.sort(key=lambda x: x.get("distance_km", 9999))
+    else:
+        results.sort(key=lambda x: x["name"])
+
+    results = results[:max_results]
+
+    # Build summary
+    total_food = sum(r["impact"]["food_given_lb"] for r in results)
+    total_families = sum(r["impact"]["families_helped"] for r in results)
+    summary = (
+        f"Found {len(results)} active food sharing communit{'y' if len(results) == 1 else 'ies'} "
+        f"that have collectively distributed {total_food:,} lbs of food "
+        f"and helped {total_families:,} families."
+    )
+
+    return {
+        "communities": results,
+        "total": len(results),
+        "summary": summary,
+    }

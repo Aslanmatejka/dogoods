@@ -10,7 +10,6 @@ function Header({
     menuItems = [
         // { label: 'Share Food', path: '/share' }, // TEMPORARILY DISABLED
         { label: 'Find Food', path: '/find' },
-        { label: 'Community', path: '/community' },
         { 
             label: 'Support Us', 
             dropdown: [
