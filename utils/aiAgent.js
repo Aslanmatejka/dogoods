@@ -168,6 +168,5 @@ async function getRecipeSuggestions(ingredients) {
 }
 
 export {
-    invokeAIAgent,
     getRecipeSuggestions,
 }
