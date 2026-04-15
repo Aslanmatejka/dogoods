@@ -5,7 +5,7 @@ import Button from '../../components/common/Button';
 import { useAuthContext } from '../../utils/AuthContext';
 
 const DistributionAttendees = () => {
-  const { user, isAdmin } = useAuthContext();
+  const { user, isAdmin, loading: authLoading, initialized } = useAuthContext();
   const [attendees, setAttendees] = React.useState([]);
   const [communities, setCommunities] = React.useState({});
   const [loading, setLoading] = React.useState(true);
@@ -17,7 +17,7 @@ const DistributionAttendees = () => {
   });
 
   React.useEffect(() => {
-    if (!user || !isAdmin) return;
+    if (!user || !isAdmin || authLoading || !initialized) return;
 
     fetchCommunities();
     fetchAttendees();
@@ -41,7 +41,7 @@ const DistributionAttendees = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [user, isAdmin]);
+  }, [user, isAdmin, authLoading, initialized]);
 
   const fetchCommunities = async () => {
     try {
