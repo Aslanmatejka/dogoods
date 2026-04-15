@@ -5,6 +5,7 @@ import Button from '../../components/common/Button';
 
 const DistributionAttendees = () => {
   const [attendees, setAttendees] = React.useState([]);
+  const [communities, setCommunities] = React.useState({});
   const [loading, setLoading] = React.useState(true);
   const [stats, setStats] = React.useState({
     totalClaims: 0,
@@ -14,6 +15,7 @@ const DistributionAttendees = () => {
   });
 
   React.useEffect(() => {
+    fetchCommunities();
     fetchAttendees();
 
     const subscription = supabase
@@ -37,6 +39,21 @@ const DistributionAttendees = () => {
     };
   }, []);
 
+  const fetchCommunities = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('communities')
+        .select('id, name')
+        .order('name', { ascending: true });
+      if (error) throw error;
+      const map = {};
+      (data || []).forEach(c => { map[c.id] = c.name; });
+      setCommunities(map);
+    } catch (err) {
+      console.error('Error fetching communities:', err);
+    }
+  };
+
   const fetchAttendees = async () => {
     try {
       setLoading(true);
@@ -45,17 +62,20 @@ const DistributionAttendees = () => {
         .from('food_claims')
         .select(`
           *,
-          claimer:users!food_claims_claimer_id_fkey(
+          claimer:users!claimer_id(
             id,
             name,
             email,
             phone,
             avatar_url
           ),
-          listing:food_listings(
+          food_listings(
             id,
             title,
-            name
+            name,
+            quantity,
+            unit,
+            community_id
           )
         `)
         .order('claimed_at', { ascending: false });
@@ -181,6 +201,12 @@ const DistributionAttendees = () => {
                     Food Item
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Qty Claimed
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Community
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     People
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -223,8 +249,14 @@ const DistributionAttendees = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">
-                        {claim.listing?.title || claim.listing?.name || 'N/A'}
+                        {claim.food_listings?.title || claim.food_listings?.name || 'N/A'}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {claim.quantity || 0} {claim.food_listings?.unit || ''}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {claim.food_listings?.community_id ? (communities[claim.food_listings.community_id] || 'Unknown') : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {claim.people || 0} people
