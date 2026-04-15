@@ -16,15 +16,10 @@ export const useAuth = () => {
     
     const unsubscribe = authService.addListener(({ user, isAuthenticated, isAdmin }) => {
       if (isMounted) {
-        // Use setTimeout to avoid state updates during unmounting
-        setTimeout(() => {
-          if (isMounted) {
-            setUser(user)
-            setIsAuthenticated(isAuthenticated)
-            setIsAdmin(isAdmin)
-            setLoading(false)
-          }
-        }, 0)
+        setUser(user)
+        setIsAuthenticated(isAuthenticated)
+        setIsAdmin(isAdmin)
+        setLoading(false)
       }
     })
 

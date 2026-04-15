@@ -56,13 +56,11 @@ function Header({
 
     const handleLogout = async () => {
         try {
-            // Clear local storage first
-            localStorage.removeItem('userAuthenticated');
-            localStorage.removeItem('currentUser');
-            localStorage.removeItem('adminAuthenticated');
-            localStorage.removeItem('adminUser');
+            // Close menus immediately so UI feels responsive
+            setIsDropdownOpen(false);
+            setIsMenuOpen(false);
 
-            // Sign out from Supabase
+            // Sign out from Supabase (this clears localStorage and notifies listeners)
             await signOut();
 
             // Navigate to home page after successful sign out
