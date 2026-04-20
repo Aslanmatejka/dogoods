@@ -99,24 +99,32 @@ function FoodCard({
             image={image_url}
             title={title}
             subtitle={
-                <div className="space-y-2">
-                    <div className="flex items-center justify-end">
-                        <div className="flex items-center text-sm text-gray-600">
-                            <i className="fas fa-map-marker-alt text-gray-400 mr-2" aria-hidden="true"></i>
-                            <span>
-                                {donor_city || donor_state ? 
-                                    [donor_city, donor_state].filter(Boolean).join(', ') :
-                                    (typeof location === 'object' && location?.address ? 
-                                        location.address :
-                                        (typeof location === 'string' && location ? 
-                                            location : 
-                                            (full_address || 'No location available'))
-                                    )}
-                            </span>
-                            {distance && <span className="ml-1 text-gray-500">({formatDistance(distance)})</span>}
-                        </div>
+                <div className="space-y-2.5 text-sm">
+                    {/* Location */}
+                    <div className="flex items-start text-gray-600">
+                        <i className="fas fa-map-marker-alt text-green-500 mr-2 mt-0.5" aria-hidden="true"></i>
+                        <span>
+                            {donor_city || donor_state ? 
+                                [donor_city, donor_state].filter(Boolean).join(', ') :
+                                (typeof location === 'object' && location?.address ? 
+                                    location.address :
+                                    (typeof location === 'string' && location ? 
+                                        location : 
+                                        (full_address || 'No location available'))
+                                )}
+                            {distance && <span className="ml-1 text-gray-400">({formatDistance(distance)})</span>}
+                        </span>
                     </div>
-                    <div className="flex items-center space-x-2 flex-wrap gap-2">
+
+                    {/* Expiry date */}
+                    <div className="flex items-center text-gray-600">
+                        <i className="fas fa-calendar-alt text-green-500 mr-2" aria-hidden="true"></i>
+                        <span className="font-medium text-gray-500 mr-1">Expires:</span>
+                        <span>{expiry_date ? formatDate(expiry_date) : 'No expiry date'}</span>
+                    </div>
+
+                    {/* Status badges */}
+                    <div className="flex items-center flex-wrap gap-1.5">
                         <UrgencyIndicator foodListing={food} />
                         {food.verification_status && food.verification_status !== 'pending' && (
                             <VerificationStatus status={food.verification_status} compact={true} />
@@ -128,13 +136,11 @@ function FoodCard({
                         >
                             {expirationStatus.label}
                         </span>
-                        <span className="text-gray-500">
-                            {expiry_date ? formatDate(expiry_date) : 'No expiry date'}
-                        </span>
                     </div>
+
                     {/* Dietary Tags */}
                     {(food.dietary_tags?.length > 0 || food.allergen_info?.length > 0) && (
-                        <div className="mt-2">
+                        <div>
                             <FoodDietaryTags food={food} compact={true} />
                         </div>
                     )}
