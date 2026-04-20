@@ -97,15 +97,19 @@ export default function ClaimFoodForm() {
         try {
             setClaiming(true);
 
-            // Check if user has a pending receipt for today (to aggregate claims)
+            // Check if user has a pending receipt for today at the SAME pickup location
             const startOfDay = new Date();
             startOfDay.setHours(0, 0, 0, 0);
+
+            const pickupLocationName = community?.name || food.location || 'Community Location';
+            const pickupAddress = community?.location || 'Address not available';
 
             const { data: existingReceipts, error: receiptCheckError } = await supabase
                 .from('receipts')
                 .select('*')
                 .eq('user_id', user.id)
                 .eq('status', 'pending')
+                .eq('pickup_location', pickupLocationName)
                 .gte('claimed_at', startOfDay.toISOString())
                 .limit(1);
 
@@ -125,8 +129,8 @@ export default function ClaimFoodForm() {
                     .insert({
                         user_id: user.id,
                         status: 'pending',
-                        pickup_location: community?.name || food.location || 'Community Location',
-                        pickup_address: community?.location || 'Address not available',
+                        pickup_location: pickupLocationName,
+                        pickup_address: pickupAddress,
                         pickup_window: pickupWindow,
                         pickup_by: pickupByDate.toISOString()
                     })
