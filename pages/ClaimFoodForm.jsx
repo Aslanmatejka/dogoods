@@ -7,17 +7,14 @@ import twilioService from '../utils/twilioService';
 import { useAuthContext } from '../utils/AuthContext';
 import { toast } from 'react-toastify';
 
-// Calculate next Friday from today
+// Calculate next Friday from today (food returns to inventory at 11:59PM Friday)
 const getNextFriday = () => {
     const today = new Date();
     const dayOfWeek = today.getDay(); // 0 = Sunday, 5 = Friday
     
-    let daysUntilFriday;
-    if (dayOfWeek <= 5) {
-        daysUntilFriday = 5 - dayOfWeek;
-    } else {
-        daysUntilFriday = 6;
-    }
+    // Days until next Friday, minimum 1 day away
+    let daysUntilFriday = (5 - dayOfWeek + 7) % 7;
+    if (daysUntilFriday === 0) daysUntilFriday = 7; // If Friday, push to next Friday
     
     const nextFriday = new Date(today);
     nextFriday.setDate(today.getDate() + daysUntilFriday);

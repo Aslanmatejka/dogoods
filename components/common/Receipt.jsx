@@ -51,7 +51,7 @@ export default function Receipt({ receipt, items, onUpdate }) {
         } else if (receipt.status === 'expired') {
             return {
                 headerClass: 'bg-orange-500',
-                headerText: 'ORDER NOT PICKED UP',
+                headerText: 'CLAIM EXPIRED',
                 buttonText: 'Reclaim',
                 buttonClass: 'bg-primary-600 hover:bg-primary-700 shadow-lg',
                 buttonDisabled: false
@@ -119,7 +119,9 @@ export default function Receipt({ receipt, items, onUpdate }) {
         try {
             // Create a new receipt for reclaiming
             const pickupBy = new Date();
-            pickupBy.setDate(pickupBy.getDate() + (5 - pickupBy.getDay() + 7) % 7 || 7);
+            let daysUntilFriday = (5 - pickupBy.getDay() + 7) % 7;
+            if (daysUntilFriday === 0) daysUntilFriday = 7; // If Friday, push to next Friday
+            pickupBy.setDate(pickupBy.getDate() + daysUntilFriday);
             pickupBy.setHours(23, 59, 59, 0);
 
             const { data: newReceipt, error: receiptError } = await supabase
@@ -186,9 +188,9 @@ export default function Receipt({ receipt, items, onUpdate }) {
             {receipt.status === 'expired' && (
                 <div className="bg-orange-50 border-l-4 border-orange-500 p-4 mx-4 mt-4">
                     <p className="text-sm text-orange-800">
-                        <strong>Note:</strong> This order was not picked up in the end of the week, and has been 
-                        automatically canceled. Please click Reclaim if you would like to order it again. 
-                        Please note that some items may no longer be available.
+                        <strong>Claim Expired:</strong> This claim was not picked up by the Friday deadline and has been 
+                        automatically expired. The items have been returned to inventory. Click Reclaim if you 
+                        would like to claim them again. Some items may no longer be available.
                     </p>
                 </div>
             )}
