@@ -201,7 +201,7 @@ export default function Receipt({ receipt, items, onUpdate }) {
                     {items.map((item, index) => (
                         <div key={index} className="flex justify-between text-gray-800">
                             <span className="font-medium">{item.food_name || item.name}</span>
-                            <span className="ml-4">{item.quantity || item.amount}</span>
+                            <span className="ml-4">{item.amount || item.quantity || 1}</span>
                         </div>
                     ))}
                 </div>
